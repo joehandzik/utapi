@@ -400,7 +400,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricUploadPart', bucket, timestamp });
         // update counters
         return this.ds.batch([
-            ['incrby', genBucketCounter(bucket, 'storageUtilizedCounter'),
+            ['incrby', genBucketCounter(params, 'storageUtilizedCounter'),
                 newByteLength],
             ['incrby', genBucketKey(bucket, 'incomingBytes', timestamp),
                 newByteLength],
@@ -481,7 +481,7 @@ export default class UtapiClient {
             bucket, timestamp,
         });
         return this.ds.batch([
-            ['incr', genBucketCounter(bucket, 'numberOfObjectsCounter')],
+            ['incr', genBucketCounter(params, 'numberOfObjectsCounter')],
             ['incr', genBucketKey(bucket, 'completeMultipartUpload',
                 timestamp)],
         ], (err, results) => {
@@ -794,10 +794,10 @@ export default class UtapiClient {
         // if previous object size is null then it's a new object in a bucket
         // or else it's an old object being overwritten
         if (oldByteLength === null) {
-            numberOfObjectsCounter = ['incr', genBucketCounter(bucket,
+            numberOfObjectsCounter = ['incr', genBucketCounter(params,
                 'numberOfObjectsCounter')];
         } else {
-            numberOfObjectsCounter = ['get', genBucketCounter(bucket,
+            numberOfObjectsCounter = ['get', genBucketCounter(params,
                 'numberOfObjectsCounter')];
         }
         const oldObjSize = oldByteLength === null ? 0 : oldByteLength;
@@ -806,7 +806,7 @@ export default class UtapiClient {
             { method: 'UtapiClient.pushMetricPutObject', bucket, timestamp });
         // update counters
         return this.ds.batch([
-            ['incrby', genBucketCounter(bucket, 'storageUtilizedCounter'),
+            ['incrby', genBucketCounter(params, 'storageUtilizedCounter'),
                 storageUtilizedDelta],
             numberOfObjectsCounter,
             ['incrby', genBucketKey(bucket, 'incomingBytes', timestamp),
@@ -881,10 +881,10 @@ export default class UtapiClient {
         // if previous object size is null then it's a new object in a bucket
         // or else it's an old object being overwritten
         if (oldByteLength === null) {
-            numberOfObjectsCounter = ['incr', genBucketCounter(bucket,
+            numberOfObjectsCounter = ['incr', genBucketCounter(params,
                 'numberOfObjectsCounter')];
         } else {
-            numberOfObjectsCounter = ['get', genBucketCounter(bucket,
+            numberOfObjectsCounter = ['get', genBucketCounter(params,
                 'numberOfObjectsCounter')];
         }
         const oldObjSize = oldByteLength === null ? 0 : oldByteLength;
@@ -893,7 +893,7 @@ export default class UtapiClient {
             { method: 'UtapiClient.pushMetricCopyObject', bucket, timestamp });
         // update counters
         return this.ds.batch([
-            ['incrby', genBucketCounter(bucket, 'storageUtilizedCounter'),
+            ['incrby', genBucketCounter(params, 'storageUtilizedCounter'),
                 storageUtilizedDelta],
             numberOfObjectsCounter,
             ['incr', genBucketKey(bucket, 'copyObject', timestamp)],

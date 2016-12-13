@@ -118,6 +118,7 @@ export function genBucketStateKey(bucket, metric) {
     return bucketStateKeys[metric](bucket);
 }
 
-export function genBucketCounter(bucket, metric) {
-    return bucketCounters[metric](bucket);
+export function genBucketCounter(params, metric) {
+    const { level, name } = getMetricData(params);
+    return bucketCounters[metric](level, name);
 }
