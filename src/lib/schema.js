@@ -5,8 +5,8 @@ const bucketStateKeys = {
 };
 
 const bucketCounters = {
-    storageUtilizedCounter: (l, n) => `s3:${l}s:${n}:storageUtilized:counter`,
-    numberOfObjectsCounter: (l, n) => `s3:${l}s:${n}:numberOfObjects:counter`,
+    storageUtilizedCounter: (l, n) => `s3:${l}:${n}:storageUtilized:counter`,
+    numberOfObjectsCounter: (l, n) => `s3:${l}:${n}:numberOfObjects:counter`,
 };
 
 const bucketKeys = {
@@ -48,7 +48,7 @@ function getMetricData(params) {
     levels.forEach(level => {
         if (params[level]) {
             data.level = level;
-            data.name = params[level];
+            data.name = params[level] === 'bucket' ? 'buckets' : params[level];
         }
     });
     return data;
