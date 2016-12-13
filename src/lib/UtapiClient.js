@@ -153,26 +153,26 @@ export default class UtapiClient {
     */
     _pushMetricCreateBucket(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
+        const metric = params.bucket ? params.bucket : params.account;
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricCreateBucket',
-            bucket, timestamp,
+            metric, timestamp,
         });
         // set storage utilized and number of objects  counters to 0,
         // indicating the start of the bucket timeline
-        const cmds = getBucketCounters(bucket).map(item => ['set', item, 0]);
+        const cmds = getBucketCounters(params).map(item => ['set', item, 0]);
         cmds.push(
             // remove old timestamp entries
             ['zremrangebyscore',
-                genBucketStateKey(bucket, 'storageUtilized'), timestamp,
+                genBucketStateKey(metric, 'storageUtilized'), timestamp,
                 timestamp],
-            ['zremrangebyscore', genBucketStateKey(bucket, 'numberOfObjects'),
+            ['zremrangebyscore', genBucketStateKey(metric, 'numberOfObjects'),
                 timestamp, timestamp],
             // add new timestamp entries
-            ['set', genBucketKey(bucket, 'createBucket', timestamp), 1],
-            ['zadd', genBucketStateKey(bucket, 'storageUtilized'), timestamp,
+            ['set', genBucketKey(metric, 'createBucket', timestamp), 1],
+            ['zadd', genBucketStateKey(metric, 'storageUtilized'), timestamp,
                 0],
-            ['zadd', genBucketStateKey(bucket, 'numberOfObjects'), timestamp, 0]
+            ['zadd', genBucketStateKey(metric, 'numberOfObjects'), timestamp, 0]
         );
         return this.ds.batch(cmds, err => {
             if (err) {

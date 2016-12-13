@@ -5,8 +5,8 @@ const bucketStateKeys = {
 };
 
 const bucketCounters = {
-    storageUtilizedCounter: b => `s3:buckets:${b}:storageUtilized:counter`,
-    numberOfObjectsCounter: b => `s3:buckets:${b}:numberOfObjects:counter`,
+    storageUtilizedCounter: (l, n) => `s3:${l}s:${n}:storageUtilized:counter`,
+    numberOfObjectsCounter: (l, n) => `s3:${l}s:${n}:numberOfObjects:counter`,
 };
 
 const bucketKeys = {
@@ -42,6 +42,18 @@ const bucketKeys = {
     outgoingBytes: (b, t) => `s3:buckets:${t}:${b}:outgoingBytes`,
 };
 
+function getMetricData(params) {
+    const levels = ['bucket', 'account'];
+    const data = {};
+    levels.forEach(level => {
+        if (params[level]) {
+            data.level = level;
+            data.name = params[level];
+        }
+    });
+    return data;
+}
+
 /**
 * Returns the metric key in schema for the bucket
 * @param {string} bucket - bucket name
@@ -55,12 +67,13 @@ export function genBucketKey(bucket, metric, timestamp) {
 
 /**
 * Returns a list of the counters for a bucket
-* @param {string} bucket - bucket name
+* @param {string} params - bucket name
 * @return {string[]} - array of keys for counters
 */
-export function getBucketCounters(bucket) {
+export function getBucketCounters(params) {
+    const { level, name } = getMetricData(params);
     return Object.keys(bucketCounters).map(
-        item => bucketCounters[item](bucket));
+        item => bucketCounters[item](level, name));
 }
 
 /**
