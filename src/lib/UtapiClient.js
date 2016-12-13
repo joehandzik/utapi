@@ -809,9 +809,9 @@ export default class UtapiClient {
             ['incrby', genBucketCounter(params, 'storageUtilizedCounter'),
                 storageUtilizedDelta],
             numberOfObjectsCounter,
-            ['incrby', genBucketKey(bucket, 'incomingBytes', timestamp),
+            ['incrby', genBucketKey(params, 'incomingBytes', timestamp),
                 newByteLength],
-            ['incr', genBucketKey(bucket, 'putObject', timestamp)],
+            ['incr', genBucketKey(params, 'putObject', timestamp)],
         ], (err, results) => {
             if (err) {
                 log.error('error pushing metric', {
@@ -836,9 +836,9 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(bucket, 'storageUtilized'),
+                    genBucketStateKey(params, 'storageUtilized'),
                     timestamp, timestamp],
-                ['zadd', genBucketStateKey(bucket, 'storageUtilized'),
+                ['zadd', genBucketStateKey(params, 'storageUtilized'),
                     timestamp, actionCounter]);
 
             // number of objects counter
@@ -854,9 +854,9 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(bucket, 'numberOfObjects'),
+                    genBucketStateKey(params, 'numberOfObjects'),
                     timestamp, timestamp],
-                ['zadd', genBucketStateKey(bucket, 'numberOfObjects'),
+                ['zadd', genBucketStateKey(params, 'numberOfObjects'),
                     timestamp, actionCounter]);
             return this.ds.batch(cmds, callback);
         });
