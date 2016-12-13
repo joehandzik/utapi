@@ -30,25 +30,38 @@ describe('Counters', () => {
     afterEach(() => memBackend.flushDb());
 
     it('should set counters to 0 on bucket creation', done => {
-        utapiClient.pushMetricCreateBucket(reqUid, testBucket,
+        utapiClient.pushMetric('createBucket', reqUid, { bucket: testBucket },
             () => _assertCounters(testBucket, done));
     });
 
     it('should reset counters on bucket re-creation', done => {
         series([
-            next => utapiClient.pushMetricCreateBucket(reqUid, testBucket,
-                next),
-            next => utapiClient.pushMetricListBucket(reqUid, testBucket, next),
-            next => utapiClient.pushMetricPutObject(reqUid, testBucket, 8, 0,
-                next),
-            next => utapiClient.pushMetricGetObject(reqUid, testBucket, 8,
-                next),
-            next => utapiClient.pushMetricDeleteObject(reqUid, testBucket, 8,
-                next),
-            next => utapiClient.pushMetricDeleteBucket(reqUid, testBucket,
-                next),
-            next => utapiClient.pushMetricCreateBucket(reqUid, testBucket,
-                next),
+            next => utapiClient.pushMetric('createBucket', reqUid, {
+                bucket: testBucket,
+            }, next),
+            next => utapiClient.pushMetric('listBucket', reqUid, {
+                bucket: testBucket,
+            }, next),
+            next => utapiClient.pushMetric('putObject', reqUid, {
+                bucket: testBucket,
+                newByteLength: 8,
+                oldByteLength: 0,
+            }, next),
+            next => utapiClient.pushMetric('getObject', reqUid, {
+                bucket: testBucket,
+                newByteLength: 8,
+            }, next),
+            next => utapiClient.pushMetric('deleteObject', reqUid, {
+                bucket: testBucket,
+                newByteLength: 8,
+                numberOfObjects: 1,
+            }, next),
+            next => utapiClient.pushMetric('deleteBucket', reqUid, {
+                bucket: testBucket,
+            }, next),
+            next => utapiClient.pushMetric('createBucket', reqUid, {
+                bucket: testBucket,
+            }, next),
         ], () => _assertCounters(testBucket, done));
     });
 });
