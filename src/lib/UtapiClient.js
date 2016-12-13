@@ -164,15 +164,15 @@ export default class UtapiClient {
         cmds.push(
             // remove old timestamp entries
             ['zremrangebyscore',
-                genBucketStateKey(metric, 'storageUtilized'), timestamp,
+                genBucketStateKey(params, 'storageUtilized'), timestamp,
                 timestamp],
-            ['zremrangebyscore', genBucketStateKey(metric, 'numberOfObjects'),
+            ['zremrangebyscore', genBucketStateKey(params, 'numberOfObjects'),
                 timestamp, timestamp],
             // add new timestamp entries
-            ['set', genBucketKey(metric, 'createBucket', timestamp), 1],
-            ['zadd', genBucketStateKey(metric, 'storageUtilized'), timestamp,
+            ['set', genBucketKey(params, 'createBucket', timestamp), 1],
+            ['zadd', genBucketStateKey(params, 'storageUtilized'), timestamp,
                 0],
-            ['zadd', genBucketStateKey(metric, 'numberOfObjects'), timestamp, 0]
+            ['zadd', genBucketStateKey(params, 'numberOfObjects'), timestamp, 0]
         );
         return this.ds.batch(cmds, err => {
             if (err) {

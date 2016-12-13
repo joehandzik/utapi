@@ -99,7 +99,7 @@ export default class Buckets {
             '-inf', 'LIMIT', '0', '1'];
         const timestampRange = Buckets.getTimestampRange(start, end);
         const bucketKeys = [].concat.apply([], timestampRange.map(
-            i => getBucketKeys(bucket, i)));
+            i => getBucketKeys({ bucket }, i)));
         const cmds = bucketKeys.map(item => ['get', item]);
         cmds.push(storageUtilizedStart, storageUtilizedEnd,
             numberOfObjectsStart, numberOfObjectsEnd);
