@@ -68,19 +68,19 @@ function testOps(keyIndex, metricindex, done) {
     let props = {};
     let val;
     if (keyIndex === 'storageUtilized' || keyIndex === 'numberOfObjects') {
-        key = genBucketStateKey(testBucket, keyIndex, timestamp);
+        key = genBucketStateKey({ bucket: testBucket }, keyIndex);
         val = 1024;
         props[metricindex] = [val, val];
         memBackend.zadd(key, timestamp, val, () =>
             assertMetrics(testBucket, props, done));
     } else if (keyIndex === 'incomingBytes' || keyIndex === 'outgoingBytes') {
-        key = genBucketKey(testBucket, keyIndex, timestamp);
+        key = genBucketKey({ bucket: testBucket }, keyIndex, timestamp);
         val = 1024;
         props[metricindex] = val;
         memBackend.incrby(key, val, () =>
             assertMetrics(testBucket, props, done));
     } else {
-        key = genBucketKey(testBucket, keyIndex, timestamp);
+        key = genBucketKey({ bucket: testBucket }, keyIndex, timestamp);
         val = 1;
         props = { operations: {} };
         props.operations[metricindex] = val;

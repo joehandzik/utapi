@@ -87,8 +87,10 @@ export default class Buckets {
         const end = range[1] || Date.now();
 
         // find nearest neighbors for absolutes
-        const storageUtilizedKey = genBucketStateKey(bucket, 'storageUtilized');
-        const numberOfObjectsKey = genBucketStateKey(bucket, 'numberOfObjects');
+        const storageUtilizedKey = genBucketStateKey({ bucket },
+            'storageUtilized');
+        const numberOfObjectsKey = genBucketStateKey({ bucket },
+            'numberOfObjects');
         const storageUtilizedStart = ['zrevrangebyscore', storageUtilizedKey,
             start, '-inf', 'LIMIT', '0', '1'];
         const storageUtilizedEnd = ['zrevrangebyscore', storageUtilizedKey, end,
