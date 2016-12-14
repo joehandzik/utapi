@@ -10,17 +10,31 @@ const ds = new Datastore();
 ds.setClient(memoryBackend);
 const REQUID = 'aaaaaaaaaaaaaaaaaaa';
 const bucket = 'foo';
+const account = 'foo-account';
 const newByteLength = 1024;
 
-// Set mock data of a particular size and count.
-function setData(objectSize, objectCount, timestamp) {
-    memoryBackend.data = {
-        's3:buckets:foo:storageUtilized:counter': objectSize,
-        's3:buckets:foo:numberOfObjects:counter': objectCount,
-        's3:buckets:foo:storageUtilized': [[timestamp, objectSize]],
-        's3:buckets:foo:numberOfObjects': [[timestamp, objectCount]],
+const metrics = [{ bucket }, { account }];
+
+function getValues(metric) {
+    const timestamp = getNormalizedTimestamp(Date.now());
+    const name = metric[Object.keys(metric)];
+    const level = Object.keys(metric)[0] === 'bucket' ? 'buckets' :
+        Object.keys(metric)[0];
+    return {
+        key: `s3:${level}:${name}`,
+        timestampKey: `s3:${level}:${timestamp}:${name}`,
+        timestamp,
+        level,
     };
-    return undefined;
+}
+
+function testMetric(action, params, expected, cb) {
+    const c = new UtapiClient();
+    c.setDataStore(ds);
+    c.pushMetric(action, REQUID, params, () => {
+        assert.deepStrictEqual(memoryBackend.data, expected);
+        cb();
+    });
 }
 
 describe('UtapiClient:: enable/disable client', () => {
@@ -42,328 +56,64 @@ describe('UtapiClient:: enable/disable client', () => {
 });
 
 describe('UtapiClient:: push metrics', () => {
-    let c;
-    let timestamp;
-    beforeEach(() => {
-        c = new UtapiClient();
-        c.setDataStore(ds);
-        timestamp = getNormalizedTimestamp(Date.now());
-    });
-
+    let expected;
+    beforeEach(() => { expected = {}; });
     afterEach(() => memoryBackend.flushDb());
 
-    it('should push metric for createBucket', done => {
-        c.pushMetric('createBucket', REQUID, { bucket }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': '0',
-                's3:buckets:foo:numberOfObjects:counter': '0',
-                's3:buckets:foo:storageUtilized': [[timestamp, '0']],
-                's3:buckets:foo:numberOfObjects': [[timestamp, '0']],
-            };
-            expected[`s3:buckets:${timestamp}:foo:CreateBucket`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
+    metrics.forEach(metric => {
+        const { key, timestampKey, timestamp, level } = getValues(metric);
 
-    it('should push metric for deleteBucket', done => {
-        c.pushMetric('deleteBucket', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:DeleteBucket`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
+        it(`should push ${level} level createBucket metrics`, done => {
+            expected[`${key}:storageUtilized:counter`] = '0';
+            expected[`${key}:numberOfObjects:counter`] = '0';
+            expected[`${key}:storageUtilized`] = [[timestamp, '0']];
+            expected[`${key}:numberOfObjects`] = [[timestamp, '0']];
+            expected[`${timestampKey}:CreateBucket`] = '1';
+            testMetric('createBucket', metric, expected, done);
         });
-    });
 
-    it('should push metric for listBucket', done => {
-        c.pushMetric('listBucket', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:ListBucket`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
+        it(`should push ${level} level deleteBucket metrics`, done => {
+            expected[`${timestampKey}:DeleteBucket`] = '1';
+            testMetric('deleteBucket', metric, expected, done);
         });
-    });
 
-    it('should push metric for getBucketAcl', done => {
-        c.pushMetric('getBucketAcl', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:GetBucketAcl`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
+        it(`should push ${level} level listBucket metrics`, done => {
+            expected[`${timestampKey}:ListBucket`] = '1';
+            testMetric('listBucket', metric, expected, done);
         });
-    });
 
-    it('should push metric for putBucketAcl', done => {
-        c.pushMetric('putBucketAcl', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:PutBucketAcl`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
+        it(`should push ${level} level getBucketAcl metrics`, done => {
+            expected[`${timestampKey}:GetBucketAcl`] = '1';
+            testMetric('getBucketAcl', metric, expected, done);
         });
-    });
 
-    it('should push metric for putBucketWebsite', done => {
-        c.pushMetric('putBucketWebsite', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:PutBucketWebsite`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
+        it(`should push ${level} level putBucketAcl metrics`, done => {
+            expected[`${timestampKey}:PutBucketAcl`] = '1';
+            testMetric('putBucketAcl', metric, expected, done);
         });
-    });
 
-    it('should push metric for getBucketWebsite', done => {
-        c.pushMetric('getBucketWebsite', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:GetBucketWebsite`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
+        it(`should push ${level} level uploadPart metrics`, done => {
+            expected[`${key}:storageUtilized:counter`] = `${newByteLength}`;
+            expected[`${key}:storageUtilized`] =
+                [[timestamp, `${newByteLength}`]];
+            expected[`${timestampKey}:incomingBytes`] = `${newByteLength}`;
+            expected[`${timestampKey}:UploadPart`] = '1';
+            const params = Object.assign({}, metric, { newByteLength });
+            testMetric('uploadPart', params, expected, done);
         });
-    });
 
-    it('should push metric for deleteBucketWebsite', done => {
-        c.pushMetric('deleteBucketWebsite', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:DeleteBucketWebsite`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
+        it(`should push ${level} level initiateMultipartUpload metrics`,
+            done => {
+                expected[`${timestampKey}:InitiateMultipartUpload`] = '1';
+                testMetric('initiateMultipartUpload', metric, expected, done);
+            });
 
-    it('should push metric for uploadPart', done => {
-        c.pushMetric('uploadPart', REQUID, { bucket, newByteLength }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': `${newByteLength}`,
-                's3:buckets:foo:storageUtilized': [[timestamp,
-                    `${newByteLength}`]],
-            };
-            expected[`s3:buckets:${timestamp}:foo:incomingBytes`] =
-                `${newByteLength}`;
-            expected[`s3:buckets:${timestamp}:foo:UploadPart`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for initiateMultipartUpload', done => {
-        c.pushMetric('initiateMultipartUpload', REQUID, { bucket }, () => {
-            const expected = {};
-            const k = `s3:buckets:${timestamp}:foo:InitiateMultipartUpload`;
-            expected[k] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for completeMultipartUpload', done => {
-        c.pushMetric('completeMultipartUpload', REQUID, { bucket }, () => {
-            const expected = {
-                's3:buckets:foo:numberOfObjects:counter': '1',
-                's3:buckets:foo:numberOfObjects': [[timestamp, '1']],
-            };
-            const k = `s3:buckets:${timestamp}:foo:CompleteMultipartUpload`;
-            expected[k] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for listMultipartUploads', done => {
-        c.pushMetric('listMultipartUploads', REQUID, { bucket }, () => {
-            const expected = {};
-            const k = `s3:buckets:${timestamp}:foo:ListBucketMultipartUploads`;
-            expected[k] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for listMultipartUploadParts', done => {
-        c.pushMetric('listMultipartUploadParts', REQUID, { bucket }, () => {
-            const expected = {};
-            const k = `s3:buckets:${timestamp}:foo:ListMultipartUploadParts`;
-            expected[k] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for abortMultipartUpload', done => {
-        c.pushMetric('abortMultipartUpload', REQUID, { bucket }, () => {
-            const expected = {};
-            const k = `s3:buckets:${timestamp}:foo:AbortMultipartUpload`;
-            expected[k] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for deleteObject', done => {
-        // Set mock data of one, 1024 byte object for `deleteObject` to update.
-        setData('1024', '1', timestamp);
-        c.pushMetric('deleteObject', REQUID, {
-            bucket,
-            byteLength: 1024,
-            numberOfObjects: 1,
-        }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': '0',
-                's3:buckets:foo:numberOfObjects:counter': '0',
-                's3:buckets:foo:storageUtilized': [[timestamp, '0']],
-                's3:buckets:foo:numberOfObjects': [[timestamp, '0']],
-            };
-            const k = `s3:buckets:${timestamp}:foo:DeleteObject`;
-            expected[k] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for multiObjectDelete', done => {
-        // Set mock data of two, 1024 byte objects for `multiObjectDelete` to
-        // update.
-        setData('2048', '2', timestamp);
-        c.pushMetric('multiObjectDelete', REQUID, {
-            bucket,
-            byteLength: 2048, // Total byte length of objects deleted.
-            numberOfObjects: 2,
-        }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': '0',
-                's3:buckets:foo:numberOfObjects:counter': '0',
-                's3:buckets:foo:storageUtilized': [[timestamp, '0']],
-                's3:buckets:foo:numberOfObjects': [[timestamp, '0']],
-            };
-            const k = `s3:buckets:${timestamp}:foo:MultiObjectDelete`;
-            expected[k] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for getObject', done => {
-        c.pushMetric('getObject', REQUID, {
-            bucket,
-            newByteLength: 1024,
-        }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:outgoingBytes`] = '1024';
-            expected[`s3:buckets:${timestamp}:foo:GetObject`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for getObjectAcl', done => {
-        c.pushMetric('getObjectAcl', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:GetObjectAcl`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for putObject', done => {
-        c.pushMetric('putObject', REQUID, {
-            bucket,
-            newByteLength: 1024,
-            oldByteLength: null,
-        }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': '1024',
-                's3:buckets:foo:numberOfObjects:counter': '1',
-                's3:buckets:foo:storageUtilized': [[timestamp, '1024']],
-                's3:buckets:foo:numberOfObjects': [[timestamp, '1']],
-            };
-            expected[`s3:buckets:${timestamp}:foo:PutObject`] = '1';
-            expected[`s3:buckets:${timestamp}:foo:incomingBytes`] = '1024';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for putObject overwrite', done => {
-        // Set mock data of one, 1024 byte object for `putObject` to overwrite.
-        setData('1024', '1', timestamp);
-        c.pushMetric('putObject', REQUID, {
-            bucket,
-            newByteLength: 2048,
-            oldByteLength: 1024,
-        }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': '2048',
-                's3:buckets:foo:numberOfObjects:counter': '1',
-                's3:buckets:foo:storageUtilized': [[timestamp, '2048']],
-                's3:buckets:foo:numberOfObjects': [[timestamp, '1']],
-            };
-            expected[`s3:buckets:${timestamp}:foo:PutObject`] = '1';
-            expected[`s3:buckets:${timestamp}:foo:incomingBytes`] = '2048';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for copyObject', done => {
-        c.pushMetric('copyObject', REQUID, {
-            bucket,
-            newByteLength: 1024,
-            oldByteLength: null,
-        }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': '1024',
-                's3:buckets:foo:numberOfObjects:counter': '1',
-                's3:buckets:foo:storageUtilized': [[timestamp, '1024']],
-                's3:buckets:foo:numberOfObjects': [[timestamp, '1']],
-            };
-            expected[`s3:buckets:${timestamp}:foo:CopyObject`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for copyObject overwrite', done => {
-        // Set mock data of one, 1024 byte object for `copyObject` to overwrite.
-        setData('1024', '1', timestamp);
-        c.pushMetric('copyObject', REQUID, {
-            bucket,
-            newByteLength: 2048,
-            oldByteLength: 1024,
-        }, () => {
-            const expected = {
-                's3:buckets:foo:storageUtilized:counter': '2048',
-                's3:buckets:foo:numberOfObjects:counter': '1',
-                's3:buckets:foo:storageUtilized': [[timestamp, '2048']],
-                's3:buckets:foo:numberOfObjects': [[timestamp, '1']],
-            };
-            expected[`s3:buckets:${timestamp}:foo:CopyObject`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for putObjectAcl', done => {
-        c.pushMetric('putObjectAcl', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:PutObjectAcl`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for headBucket', done => {
-        c.pushMetric('headBucket', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:HeadBucket`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
-    });
-
-    it('should push metric for headObject', done => {
-        c.pushMetric('headObject', REQUID, { bucket }, () => {
-            const expected = {};
-            expected[`s3:buckets:${timestamp}:foo:HeadObject`] = '1';
-            assert.deepStrictEqual(memoryBackend.data, expected);
-            done();
-        });
+        it(`should push ${level} level completeMultipartUpload metrics`,
+            done => {
+                expected[`${key}:numberOfObjects:counter`] = '1';
+                expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
+                expected[`${timestampKey}:CompleteMultipartUpload`] = '1';
+                testMetric('completeMultipartUpload', metric, expected, done);
+            });
     });
 });

@@ -230,7 +230,7 @@ export default class UtapiClient {
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricDeleteBucketWebsite',
             bucket, timestamp });
-        const key = genBucketKey(bucket, 'deleteBucketWebsite', timestamp);
+        const key = genBucketKey(params, 'deleteBucketWebsite', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -315,7 +315,7 @@ export default class UtapiClient {
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricGetBucketWebsite',
             bucket, timestamp });
-        const key = genBucketKey(bucket, 'getBucketWebsite', timestamp);
+        const key = genBucketKey(params, 'getBucketWebsite', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -370,7 +370,7 @@ export default class UtapiClient {
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricPutBucketWebsite',
             bucket, timestamp });
-        const key = genBucketKey(bucket, 'putBucketWebsite', timestamp);
+        const key = genBucketKey(params, 'putBucketWebsite', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -559,7 +559,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricListMultipartUploadParts',
             bucket, timestamp,
         });
-        const key = genBucketKey(bucket, 'listMultipartUploadParts', timestamp);
+        const key = genBucketKey(params, 'listMultipartUploadParts', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
