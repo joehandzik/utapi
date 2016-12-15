@@ -17,6 +17,6 @@ export default class BucketsHandler {
         log.debug('handling list metrics request', {
             method: 'BucketsHandler.listMetrics',
         });
-        return Buckets.getBucketsMetrics(utapiRequest, cb);
+        return Buckets.getTypesMetrics(utapiRequest, cb);
     }
 }

@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { Logger } from 'werelogs';
 import Datastore from './Datastore';
-import { genBucketKey, genBucketCounter, getBucketCounters, genBucketStateKey }
+import { generateKey, generateCounter, getCounters, generateStateKey }
     from './schema';
 import { errors } from 'arsenal';
 import redisClient from '../utils/redisClient';
@@ -160,19 +160,19 @@ export default class UtapiClient {
         });
         // set storage utilized and number of objects  counters to 0,
         // indicating the start of the bucket timeline
-        const cmds = getBucketCounters(params).map(item => ['set', item, 0]);
+        const cmds = getCounters(params).map(item => ['set', item, 0]);
         cmds.push(
             // remove old timestamp entries
             ['zremrangebyscore',
-                genBucketStateKey(params, 'storageUtilized'), timestamp,
+                generateStateKey(params, 'storageUtilized'), timestamp,
                 timestamp],
-            ['zremrangebyscore', genBucketStateKey(params, 'numberOfObjects'),
+            ['zremrangebyscore', generateStateKey(params, 'numberOfObjects'),
                 timestamp, timestamp],
             // add new timestamp entries
-            ['set', genBucketKey(params, 'createBucket', timestamp), 1],
-            ['zadd', genBucketStateKey(params, 'storageUtilized'), timestamp,
+            ['set', generateKey(params, 'createBucket', timestamp), 1],
+            ['zadd', generateStateKey(params, 'storageUtilized'), timestamp,
                 0],
-            ['zadd', genBucketStateKey(params, 'numberOfObjects'), timestamp, 0]
+            ['zadd', generateStateKey(params, 'numberOfObjects'), timestamp, 0]
         );
         return this.ds.batch(cmds, err => {
             if (err) {
@@ -202,7 +202,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricDeleteBucket',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'deleteBucket', timestamp);
+        const key = generateKey(params, 'deleteBucket', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -259,7 +259,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricListBucket',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'listBucket', timestamp);
+        const key = generateKey(params, 'listBucket', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -287,7 +287,7 @@ export default class UtapiClient {
         log.trace('pushing metric', { method: 'UtapiClient.pushMetricGet' +
             'BucketAcl',
             bucket, timestamp });
-        const key = genBucketKey(params, 'getBucketAcl', timestamp);
+        const key = generateKey(params, 'getBucketAcl', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -342,7 +342,7 @@ export default class UtapiClient {
         const { bucket } = params;
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricPutBucketAcl', bucket, timestamp });
-        const key = genBucketKey(params, 'putBucketAcl', timestamp);
+        const key = generateKey(params, 'putBucketAcl', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -370,7 +370,7 @@ export default class UtapiClient {
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricPutBucketWebsite',
             bucket, timestamp });
-        const key = genBucketKey(params, 'putBucketWebsite', timestamp);
+        const key = generateKey(bucket, 'putBucketWebsite', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -400,11 +400,11 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricUploadPart', bucket, timestamp });
         // update counters
         return this.ds.batch([
-            ['incrby', genBucketCounter(params, 'storageUtilizedCounter'),
+            ['incrby', generateCounter(params, 'storageUtilizedCounter'),
                 newByteLength],
-            ['incrby', genBucketKey(params, 'incomingBytes', timestamp),
+            ['incrby', generateKey(params, 'incomingBytes', timestamp),
                 newByteLength],
-            ['incr', genBucketKey(params, 'uploadPart', timestamp)],
+            ['incr', generateKey(params, 'uploadPart', timestamp)],
         ], (err, results) => {
             if (err) {
                 log.error('error pushing metric', {
@@ -427,9 +427,9 @@ export default class UtapiClient {
 
             return this.ds.batch([
                 ['zremrangebyscore',
-                    genBucketStateKey(params, 'storageUtilized'),
+                    generateStateKey(params, 'storageUtilized'),
                     timestamp, timestamp],
-                ['zadd', genBucketStateKey(params, 'storageUtilized'),
+                ['zadd', generateStateKey(params, 'storageUtilized'),
                     timestamp, actionCounter],
             ], callback);
         });
@@ -451,7 +451,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricInitiateMultipartUpload',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'initiateMultipartUpload', timestamp);
+        const key = generateKey(params, 'initiateMultipartUpload', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -481,8 +481,8 @@ export default class UtapiClient {
             bucket, timestamp,
         });
         return this.ds.batch([
-            ['incr', genBucketCounter(params, 'numberOfObjectsCounter')],
-            ['incr', genBucketKey(params, 'completeMultipartUpload',
+            ['incr', generateCounter(params, 'numberOfObjectsCounter')],
+            ['incr', generateKey(params, 'completeMultipartUpload',
                 timestamp)],
         ], (err, results) => {
             if (err) {
@@ -504,7 +504,7 @@ export default class UtapiClient {
                 });
                 return callback(errors.InternalError);
             }
-            const key = genBucketStateKey(params, 'numberOfObjects');
+            const key = generateStateKey(params, 'numberOfObjects');
             return this.ds.batch([
                 ['zremrangebyscore', key, timestamp, timestamp],
                 ['zadd', key, timestamp, actionCounter],
@@ -528,7 +528,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricListBucketMultipartUploads',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'listBucketMultipartUploads',
+        const key = generateKey(params, 'listBucketMultipartUploads',
             timestamp);
         return this.ds.incr(key, err => {
             if (err) {
@@ -559,7 +559,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricListMultipartUploadParts',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'listMultipartUploadParts', timestamp);
+        const key = generateKey(bucket, 'listMultipartUploadParts', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -589,7 +589,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricAbortMultipartUpload',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'abortMultipartUpload', timestamp);
+        const key = generateKey(params, 'abortMultipartUpload', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -623,11 +623,11 @@ export default class UtapiClient {
             bucket, timestamp,
         });
         return this.ds.batch([
-            ['decrby', genBucketCounter(bucket, 'storageUtilizedCounter'),
+            ['decrby', generateCounter(bucket, 'storageUtilizedCounter'),
                 byteLength],
-            ['decrby', genBucketCounter(bucket, 'numberOfObjectsCounter'),
+            ['decrby', generateCounter(bucket, 'numberOfObjectsCounter'),
                 numberOfObjects],
-            ['incr', genBucketKey(params, bucketAction, timestamp)],
+            ['incr', generateKey(params, bucketAction, timestamp)],
         ], (err, results) => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -652,10 +652,10 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(params, 'storageUtilized'),
+                    generateStateKey(params, 'storageUtilized'),
                     timestamp, timestamp],
                 ['zadd',
-                    genBucketStateKey(params, 'storageUtilized'),
+                    generateStateKey(params, 'storageUtilized'),
                     timestamp, actionCounter]);
 
             // num of objects counter
@@ -672,9 +672,9 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(params, 'numberOfObjects'), timestamp,
+                    generateStateKey(params, 'numberOfObjects'), timestamp,
                     timestamp],
-                ['zadd', genBucketStateKey(params, 'numberOfObjects'),
+                ['zadd', generateStateKey(params, 'numberOfObjects'),
                     timestamp, actionCounter]);
             return this.ds.batch(cmds, callback);
         });
@@ -730,9 +730,9 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricGetObject', bucket, timestamp });
         // update counters
         return this.ds.batch([
-            ['incrby', genBucketKey(params, 'outgoingBytes', timestamp),
+            ['incrby', generateKey(params, 'outgoingBytes', timestamp),
                 newByteLength],
-            ['incr', genBucketKey(params, 'getObject', timestamp)],
+            ['incr', generateKey(params, 'getObject', timestamp)],
         ], err => {
             if (err) {
                 log.error('error pushing metric', {
@@ -761,7 +761,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricGetObjectAcl',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'getObjectAcl', timestamp);
+        const key = generateKey(params, 'getObjectAcl', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -794,10 +794,10 @@ export default class UtapiClient {
         // if previous object size is null then it's a new object in a bucket
         // or else it's an old object being overwritten
         if (oldByteLength === null) {
-            numberOfObjectsCounter = ['incr', genBucketCounter(params,
+            numberOfObjectsCounter = ['incr', generateCounter(params,
                 'numberOfObjectsCounter')];
         } else {
-            numberOfObjectsCounter = ['get', genBucketCounter(params,
+            numberOfObjectsCounter = ['get', generateCounter(params,
                 'numberOfObjectsCounter')];
         }
         const oldObjSize = oldByteLength === null ? 0 : oldByteLength;
@@ -806,12 +806,12 @@ export default class UtapiClient {
             { method: 'UtapiClient.pushMetricPutObject', bucket, timestamp });
         // update counters
         return this.ds.batch([
-            ['incrby', genBucketCounter(params, 'storageUtilizedCounter'),
+            ['incrby', generateCounter(params, 'storageUtilizedCounter'),
                 storageUtilizedDelta],
             numberOfObjectsCounter,
-            ['incrby', genBucketKey(params, 'incomingBytes', timestamp),
+            ['incrby', generateKey(params, 'incomingBytes', timestamp),
                 newByteLength],
-            ['incr', genBucketKey(params, 'putObject', timestamp)],
+            ['incr', generateKey(params, 'putObject', timestamp)],
         ], (err, results) => {
             if (err) {
                 log.error('error pushing metric', {
@@ -836,9 +836,9 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(params, 'storageUtilized'),
+                    generateStateKey(params, 'storageUtilized'),
                     timestamp, timestamp],
-                ['zadd', genBucketStateKey(params, 'storageUtilized'),
+                ['zadd', generateStateKey(params, 'storageUtilized'),
                     timestamp, actionCounter]);
 
             // number of objects counter
@@ -854,9 +854,9 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(params, 'numberOfObjects'),
+                    generateStateKey(params, 'numberOfObjects'),
                     timestamp, timestamp],
-                ['zadd', genBucketStateKey(params, 'numberOfObjects'),
+                ['zadd', generateStateKey(params, 'numberOfObjects'),
                     timestamp, actionCounter]);
             return this.ds.batch(cmds, callback);
         });
@@ -881,10 +881,10 @@ export default class UtapiClient {
         // if previous object size is null then it's a new object in a bucket
         // or else it's an old object being overwritten
         if (oldByteLength === null) {
-            numberOfObjectsCounter = ['incr', genBucketCounter(params,
+            numberOfObjectsCounter = ['incr', generateCounter(params,
                 'numberOfObjectsCounter')];
         } else {
-            numberOfObjectsCounter = ['get', genBucketCounter(params,
+            numberOfObjectsCounter = ['get', generateCounter(params,
                 'numberOfObjectsCounter')];
         }
         const oldObjSize = oldByteLength === null ? 0 : oldByteLength;
@@ -893,10 +893,10 @@ export default class UtapiClient {
             { method: 'UtapiClient.pushMetricCopyObject', bucket, timestamp });
         // update counters
         return this.ds.batch([
-            ['incrby', genBucketCounter(params, 'storageUtilizedCounter'),
+            ['incrby', generateCounter(params, 'storageUtilizedCounter'),
                 storageUtilizedDelta],
             numberOfObjectsCounter,
-            ['incr', genBucketKey(params, 'copyObject', timestamp)],
+            ['incr', generateKey(params, 'copyObject', timestamp)],
         ], (err, results) => {
             if (err) {
                 log.error('error pushing metric', {
@@ -921,9 +921,9 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(params, 'storageUtilized'),
+                    generateStateKey(params, 'storageUtilized'),
                     timestamp, timestamp],
-                ['zadd', genBucketStateKey(params, 'storageUtilized'),
+                ['zadd', generateStateKey(params, 'storageUtilized'),
                     timestamp, actionCounter]);
 
             // number of objects counter
@@ -939,9 +939,9 @@ export default class UtapiClient {
             }
             cmds.push(
                 ['zremrangebyscore',
-                    genBucketStateKey(params, 'numberOfObjects'),
+                    generateStateKey(params, 'numberOfObjects'),
                     timestamp, timestamp],
-                ['zadd', genBucketStateKey(params, 'numberOfObjects'),
+                ['zadd', generateStateKey(params, 'numberOfObjects'),
                     timestamp, actionCounter]);
             return this.ds.batch(cmds, callback);
         });
@@ -963,7 +963,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricPutObjectAcl',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'putObjectAcl', timestamp);
+        const key = generateKey(params, 'putObjectAcl', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -992,7 +992,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricHeadBucket',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'headBucket', timestamp);
+        const key = generateKey(params, 'headBucket', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -1021,7 +1021,7 @@ export default class UtapiClient {
             method: 'UtapiClient.pushMetricHeadObject',
             bucket, timestamp,
         });
-        const key = genBucketKey(params, 'headObject', timestamp);
+        const key = generateKey(params, 'headObject', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {

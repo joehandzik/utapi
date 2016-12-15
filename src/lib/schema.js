@@ -1,15 +1,15 @@
 // bucket schema
-const bucketStateKeys = {
+const stateKeys = {
     storageUtilized: (l, id) => `s3:${l}:${id}:storageUtilized`,
     numberOfObjects: (l, id) => `s3:${l}:${id}:numberOfObjects`,
 };
 
-const bucketCounters = {
+const counters = {
     storageUtilizedCounter: (l, id) => `s3:${l}:${id}:storageUtilized:counter`,
     numberOfObjectsCounter: (l, id) => `s3:${l}:${id}:numberOfObjects:counter`,
 };
 
-const bucketKeys = {
+const keys = {
     createBucket: (l, id, t) => `s3:${l}:${t}:${id}:CreateBucket`,
     deleteBucket: (l, id, t) => `s3:${l}:${t}:${id}:DeleteBucket`,
     listBucket: (l, id, t) => `s3:${l}:${t}:${id}:ListBucket`,
@@ -61,9 +61,10 @@ function getSchemaPrefix(params) {
 * @param {number} timestamp - unix timestamp normalized to the nearest 15 min.
 * @return {string} - schema key
 */
-export function genBucketKey(params, metric, timestamp) {
+
+export function generateKey(params, metric, timestamp) {
     const { level, name } = getSchemaPrefix(params);
-    return bucketKeys[metric](level, name, timestamp);
+    return keys[metric](level, name, timestamp);
 }
 
 /**
@@ -71,10 +72,10 @@ export function genBucketKey(params, metric, timestamp) {
 * @param {string} params - bucket name
 * @return {string[]} - array of keys for counters
 */
-export function getBucketCounters(params) {
+export function getCounters(params) {
     const { level, name } = getSchemaPrefix(params);
-    return Object.keys(bucketCounters).map(
-        item => bucketCounters[item](level, name));
+    return Object.keys(counters).map(
+        item => counters[item](level, name));
 }
 
 /**
@@ -83,10 +84,10 @@ export function getBucketCounters(params) {
 * @param {number} timestamp - unix timestamp normalized to the nearest 15 min.
 * @return {string[]} - list of keys
 */
-export function getBucketKeys(params, timestamp) {
+export function getKeys(params, timestamp) {
     const { level, name } = getSchemaPrefix(params);
-    return Object.keys(bucketKeys)
-        .map(item => bucketKeys[item](level, name, timestamp));
+    return Object.keys(keys)
+        .map(item => keys[item](level, name, timestamp));
 }
 
 /**
@@ -105,10 +106,10 @@ export function getMetricFromKey(key, value) {
 * @param {string} params - bucket name
 * @return {string[]} - list of keys
 */
-export function getBucketStateKeys(params) {
+export function getStateKeys(params) {
     const { level, name } = getSchemaPrefix(params);
-    return Object.keys(bucketStateKeys)
-        .map(item => bucketStateKeys[item](level, name));
+    return Object.keys(stateKeys)
+        .map(item => stateKeys[item](level, name));
 }
 
 /**
@@ -117,12 +118,12 @@ export function getBucketStateKeys(params) {
 * @param {string} metric - metric name
 * @return {string} - schema key
 */
-export function genBucketStateKey(params, metric) {
+export function generateStateKey(params, metric) {
     const { level, name } = getSchemaPrefix(params);
-    return bucketStateKeys[metric](level, name);
+    return stateKeys[metric](level, name);
 }
 
-export function genBucketCounter(params, metric) {
+export function generateCounter(params, metric) {
     const { level, name } = getSchemaPrefix(params);
-    return bucketCounters[metric](level, name);
+    return counters[metric](level, name);
 }

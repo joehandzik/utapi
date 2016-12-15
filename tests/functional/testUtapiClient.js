@@ -4,7 +4,7 @@ import UtapiClient from '../../src/lib/UtapiClient';
 import Datastore from '../../src/lib/Datastore';
 import redisClient from '../../src/utils/redisClient';
 import { Logger } from 'werelogs';
-import { getBucketCounters, getMetricFromKey } from '../../src/lib/schema';
+import { getCounters, getMetricFromKey } from '../../src/lib/schema';
 const bucket = 'foo';
 const datastore = new Datastore();
 const utapiClient = new UtapiClient();
@@ -13,7 +13,7 @@ const redis = redisClient({ host: '127.0.0.1', port: 6379 }, Logger);
 datastore.setClient(redis);
 utapiClient.setDataStore(datastore);
 function _assertCounters(bucket, cb) {
-    const counters = getBucketCounters(bucket);
+    const counters = getCounters({ bucket });
     return mapSeries(counters, (item, next) =>
         datastore.get(item, (err, res) => {
             if (err) {

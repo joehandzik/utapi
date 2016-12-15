@@ -2,7 +2,7 @@ import assert from 'assert';
 import Buckets from '../../src/lib/Buckets';
 import MemoryBackend from '../../src/lib/backend/Memory';
 import Datastore from '../../src/lib/Datastore';
-import { genBucketStateKey, genBucketKey } from '../../src/lib/schema';
+import { generateStateKey, generateKey } from '../../src/lib/schema';
 import { Logger } from 'werelogs';
 const logger = new Logger('UtapiTest');
 const testBucket = 'foo';
@@ -47,7 +47,7 @@ function assertMetrics(bucket, props, done) {
         },
     };
     const expectedResProps = props || {};
-    Buckets.getBucketMetrics(bucket, timeRange, datastore, logger,
+    Buckets.getMetrics(bucket, timeRange, datastore, logger,
         (err, res) => {
             assert.strictEqual(err, null);
             // overwrite operations metrics
@@ -68,19 +68,19 @@ function testOps(keyIndex, metricindex, done) {
     let props = {};
     let val;
     if (keyIndex === 'storageUtilized' || keyIndex === 'numberOfObjects') {
-        key = genBucketStateKey({ bucket: testBucket }, keyIndex);
+        key = generateStateKey({ bucket: testBucket }, keyIndex);
         val = 1024;
         props[metricindex] = [val, val];
         memBackend.zadd(key, timestamp, val, () =>
             assertMetrics(testBucket, props, done));
     } else if (keyIndex === 'incomingBytes' || keyIndex === 'outgoingBytes') {
-        key = genBucketKey({ bucket: testBucket }, keyIndex, timestamp);
+        key = generateKey({ bucket: testBucket }, keyIndex, timestamp);
         val = 1024;
         props[metricindex] = val;
         memBackend.incrby(key, val, () =>
             assertMetrics(testBucket, props, done));
     } else {
-        key = genBucketKey({ bucket: testBucket }, keyIndex, timestamp);
+        key = generateKey({ bucket: testBucket }, keyIndex, timestamp);
         val = 1;
         props = { operations: {} };
         props.operations[metricindex] = val;

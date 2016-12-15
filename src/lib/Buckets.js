@@ -1,6 +1,6 @@
 import async from 'async';
 import { errors } from 'arsenal';
-import { getMetricFromKey, getBucketKeys, genBucketStateKey } from './schema';
+import { getMetricFromKey, getKeys, generateStateKey } from './schema';
 
 /**
 * Provides static methods to get bucket level metrics
@@ -21,14 +21,14 @@ export default class Buckets {
     * @param {Buckets~bucketsMetricsCb} cb - callback
     * @return {undefined}
     */
-    static getBucketsMetrics(utapiRequest, cb) {
+    static getTypesMetrics(utapiRequest, cb) {
         const log = utapiRequest.getLog();
         const validator = utapiRequest.getValidator();
         const buckets = validator.get('buckets');
         const timeRange = validator.get('timeRange');
         const datastore = utapiRequest.getDatastore();
         async.mapLimit(buckets, 5, (bucket, next) =>
-            Buckets.getBucketMetrics(bucket, timeRange, datastore, log, next),
+            Buckets.getTypeMetrics(bucket, timeRange, datastore, log, next),
             cb
         );
     }
@@ -54,7 +54,7 @@ export default class Buckets {
 
     /**
     * Callback for getting metrics for a single bucket
-    * @callback Buckets~getBucketMetricsCb
+    * @callback Buckets~getTypeMetricsCb
     * @param {object} err - ArsenalError instance
     * @param {object} bucket - metrics for a single bucket
     * @param {string} bucket.bucketName - name of the bucket
@@ -79,17 +79,17 @@ export default class Buckets {
     * it's members in unix epoch timestamp format
     * @param {object} datastore - Datastore instance
     * @param {object} log - Werelogs logger instance
-    * @param {Buckets~getBucketMetricsCb} cb - callback
+    * @param {Buckets~getTypeMetricsCb} cb - callback
     * @return {undefined}
     */
-    static getBucketMetrics(bucket, range, datastore, log, cb) {
+    static getTypeMetrics(bucket, range, datastore, log, cb) {
         const start = range[0];
         const end = range[1] || Date.now();
 
         // find nearest neighbors for absolutes
-        const storageUtilizedKey = genBucketStateKey({ bucket },
+        const storageUtilizedKey = generateStateKey({ bucket },
             'storageUtilized');
-        const numberOfObjectsKey = genBucketStateKey({ bucket },
+        const numberOfObjectsKey = generateStateKey({ bucket },
             'numberOfObjects');
         const storageUtilizedStart = ['zrevrangebyscore', storageUtilizedKey,
             start, '-inf', 'LIMIT', '0', '1'];
@@ -101,7 +101,7 @@ export default class Buckets {
             '-inf', 'LIMIT', '0', '1'];
         const timestampRange = Buckets.getTimestampRange(start, end);
         const bucketKeys = [].concat.apply([], timestampRange.map(
-            i => getBucketKeys({ bucket }, i)));
+            i => getKeys({ bucket }, i)));
         const cmds = bucketKeys.map(item => ['get', item]);
         cmds.push(storageUtilizedStart, storageUtilizedEnd,
             numberOfObjectsStart, numberOfObjectsEnd);
@@ -110,7 +110,7 @@ export default class Buckets {
             if (err) {
                 log.trace('error occurred while getting bucket metrics', {
                     error: err,
-                    method: 'Buckets.getBucketMetrics',
+                    method: 'Buckets.getTypeMetrics',
                     bucket,
                 });
                 return cb(errors.InternalError);
@@ -157,7 +157,7 @@ export default class Buckets {
                     // log error and continue
                     log.trace('command in a batch failed to execute', {
                         error: item[0],
-                        method: 'Buckets.getBucketMetrics',
+                        method: 'Buckets.getTypeMetrics',
                     });
                 } else {
                     let val = parseInt(item[1], 10);
@@ -187,7 +187,7 @@ export default class Buckets {
                     // log error and continue
                     log.trace('command in a batch failed to execute', {
                         error: item[0],
-                        method: 'Buckets.getBucketMetrics',
+                        method: 'Buckets.getTypeMetrics',
                         cmd: key,
                     });
                 } else {
