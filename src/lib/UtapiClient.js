@@ -31,6 +31,7 @@ const methods = {
     headBucket: '_pushMetricHeadBucket',
     headObject: '_pushMetricHeadObject',
 };
+
 export default class UtapiClient {
     constructor(config) {
         this.disableClient = true;
@@ -111,6 +112,31 @@ export default class UtapiClient {
         });
     }
 
+    /*
+    * Utility function to use with push metric calls.
+    */
+    _generateKeyAndIncrement(params, timestamp, action, log, callback) {
+        const key = generateKey(params, action, timestamp);
+        return this.ds.incr(key, err => {
+            if (err) {
+                log.error('error incrementing counter', {
+                    method: `UtapiClient.${methods[action]}`,
+                    error: err,
+                });
+                return callback(errors.InternalError);
+            }
+            return callback();
+        });
+    }
+
+    _logMetric(params, method, timestamp, log) {
+        const { bucket } = params;
+        log.trace('pushing metric', {
+            method: `UtapiClient.${method}`,
+            bucket, timestamp,
+        });
+    }
+
     /**
     * Generic method exposed by the client to push a metric with some values.
     * `params` can be expanded to provide metrics for other granularities
@@ -154,10 +180,7 @@ export default class UtapiClient {
     _pushMetricCreateBucket(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
         const metric = params.bucket ? params.bucket : params.account;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricCreateBucket',
-            metric, timestamp,
-        });
+        this._logMetric(params, '_pushMetricCreateBucket', timestamp, log);
         // set storage utilized and number of objects  counters to 0,
         // indicating the start of the bucket timeline
         const cmds = getCounters(params).map(item => ['set', item, 0]);
@@ -197,22 +220,9 @@ export default class UtapiClient {
     */
     _pushMetricDeleteBucket(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricDeleteBucket',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'deleteBucket', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'Buckets.pushMetricDeleteBucket',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricDeleteBucket', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp, 'deleteBucket',
+            log, callback);
     }
 
     /**
@@ -254,22 +264,9 @@ export default class UtapiClient {
     */
     _pushMetricListBucket(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricListBucket',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'listBucket', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'Buckets.pushMetricListBucket',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricListBucket', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp, 'listBucket',
+            log, callback);
     }
 
     /**
@@ -283,21 +280,9 @@ export default class UtapiClient {
     */
     _pushMetricGetBucketAcl(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', { method: 'UtapiClient.pushMetricGet' +
-            'BucketAcl',
-            bucket, timestamp });
-        const key = generateKey(params, 'getBucketAcl', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'Buckets.pushMetricGetBucketAcl',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricGetBucketAcl', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp, 'getBucketAcl',
+            log, callback);
     }
 
     /**
@@ -339,20 +324,9 @@ export default class UtapiClient {
     */
     _pushMetricPutBucketAcl(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricPutBucketAcl', bucket, timestamp });
-        const key = generateKey(params, 'putBucketAcl', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'Buckets.pushMetricPutBucketAcl',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricPutBucketAcl', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp, 'putBucketAcl',
+            log, callback);
     }
 
     /**
@@ -366,21 +340,9 @@ export default class UtapiClient {
     */
     _pushMetricPutBucketWebsite(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricPutBucketWebsite',
-            bucket, timestamp });
-        const key = generateKey(bucket, 'putBucketWebsite', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'Buckets.pushMetricPutBucketWebsite',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricPutBucketWebsite', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'putBucketWebsite', log, callback);
     }
 
     /**
@@ -446,22 +408,10 @@ export default class UtapiClient {
     */
     _pushMetricInitiateMultipartUpload(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricInitiateMultipartUpload',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'initiateMultipartUpload', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'UtapiClient.pushMetricInitiateMultipartUpload',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricInitiateMultipartUpload', timestamp,
+            log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'initiateMultipartUpload', log, callback);
     }
 
     /**
@@ -475,11 +425,8 @@ export default class UtapiClient {
     */
     _pushMetricCompleteMultipartUpload(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricCompleteMultipartUpload',
-            bucket, timestamp,
-        });
+        this._logMetric(params, '_pushMetricCompleteMultipartUpload', timestamp,
+            log);
         return this.ds.batch([
             ['incr', generateCounter(params, 'numberOfObjectsCounter')],
             ['incr', generateKey(params, 'completeMultipartUpload',
@@ -523,11 +470,8 @@ export default class UtapiClient {
     */
     _pushMetricListBucketMultipartUploads(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricListBucketMultipartUploads',
-            bucket, timestamp,
-        });
+        this._logMetric(params, '_pushMetricListBucketMultipartUploads',
+            timestamp, log);
         const key = generateKey(params, 'listBucketMultipartUploads',
             timestamp);
         return this.ds.incr(key, err => {
@@ -554,23 +498,10 @@ export default class UtapiClient {
     */
     _pushMetricListMultipartUploadParts(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricListMultipartUploadParts',
-            bucket, timestamp,
-        });
-        const key = generateKey(bucket, 'listMultipartUploadParts', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'UtapiClient.pushMetricListMultipartUpload' +
-                        'Parts',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricListMultipartUploadParts',
+            timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'listMultipartUploadParts', log, callback);
     }
 
     /**
@@ -584,22 +515,10 @@ export default class UtapiClient {
     */
     _pushMetricAbortMultipartUpload(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricAbortMultipartUpload',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'abortMultipartUpload', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'UtapiClient.pushMetricAbortMultipartUpload',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricAbortMultipartUpload', timestamp,
+            log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'abortMultipartUpload', log, callback);
     }
 
     /**
@@ -756,22 +675,9 @@ export default class UtapiClient {
     */
     _pushMetricGetObjectAcl(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricGetObjectAcl',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'getObjectAcl', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'UtapiClient.pushMetricGetObjectAcl',
-                    error: err,
-                });
-                return callback(err);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricGetObjectAcl', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'getObjectAcl', log, callback);
     }
 
 
@@ -958,22 +864,9 @@ export default class UtapiClient {
     */
     _pushMetricPutObjectAcl(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricPutObjectAcl',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'putObjectAcl', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'UtapiClient.pushMetricPutObjectAcl',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricPutObjectAcl', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'putObjectAcl', log, callback);
     }
 
     /**
@@ -987,22 +880,9 @@ export default class UtapiClient {
     */
     _pushMetricHeadBucket(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricHeadBucket',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'headBucket', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'UtapiClient.pushMetricHeadBucket',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricHeadBucket', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'headBucket', log, callback);
     }
 
     /**
@@ -1016,21 +896,8 @@ export default class UtapiClient {
     */
     _pushMetricHeadObject(params, timestamp, log, callback) {
         this._checkTypes(params, ['bucket']);
-        const { bucket } = params;
-        log.trace('pushing metric', {
-            method: 'UtapiClient.pushMetricHeadObject',
-            bucket, timestamp,
-        });
-        const key = generateKey(params, 'headObject', timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: 'UtapiClient.pushMetricHeadObject',
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
+        this._logMetric(params, '_pushMetricHeadObject', timestamp, log);
+        return this._generateKeyAndIncrement(params, timestamp,
+            'headObject', log, callback);
     }
 }
