@@ -9,17 +9,15 @@ const memoryBackend = new MemoryBackend();
 const ds = new Datastore();
 ds.setClient(memoryBackend);
 const REQUID = 'aaaaaaaaaaaaaaaaaaa';
-const bucket = 'foo';
-const account = 'foo-account';
-const newByteLength = 1024;
-
-const metrics = [{ bucket }, { account }];
+const metricObj = {
+    bucket: 'foo-bucket',
+    account: 'foo-account',
+};
 
 function getValues(metric) {
     const timestamp = getNormalizedTimestamp(Date.now());
-    const name = metric[Object.keys(metric)];
-    const level = Object.keys(metric)[0] === 'bucket' ? 'buckets' :
-        Object.keys(metric)[0];
+    const name = metricObj[metric];
+    const level = metric === 'bucket' ? 'buckets' : metric;
     return {
         key: `s3:${level}:${name}`,
         timestampKey: `s3:${level}:${timestamp}:${name}`,
@@ -60,7 +58,9 @@ describe('UtapiClient:: push metrics', () => {
     beforeEach(() => { expected = {}; });
     afterEach(() => memoryBackend.flushDb());
 
-    metrics.forEach(metric => {
+    Object.keys(metricObj).forEach(metric => {
+        const params = {};
+        params[metric] = metricObj[metric];
         const { key, timestampKey, timestamp, level } = getValues(metric);
 
         it(`should push ${level} level createBucket metrics`, done => {
@@ -69,43 +69,45 @@ describe('UtapiClient:: push metrics', () => {
             expected[`${key}:storageUtilized`] = [[timestamp, '0']];
             expected[`${key}:numberOfObjects`] = [[timestamp, '0']];
             expected[`${timestampKey}:CreateBucket`] = '1';
-            testMetric('createBucket', metric, expected, done);
+            testMetric('createBucket', params, expected, done);
         });
 
         it(`should push ${level} level deleteBucket metrics`, done => {
             expected[`${timestampKey}:DeleteBucket`] = '1';
-            testMetric('deleteBucket', metric, expected, done);
+            testMetric('deleteBucket', params, expected, done);
         });
 
         it(`should push ${level} level listBucket metrics`, done => {
             expected[`${timestampKey}:ListBucket`] = '1';
-            testMetric('listBucket', metric, expected, done);
+            testMetric('listBucket', params, expected, done);
         });
 
         it(`should push ${level} level getBucketAcl metrics`, done => {
             expected[`${timestampKey}:GetBucketAcl`] = '1';
-            testMetric('getBucketAcl', metric, expected, done);
+            testMetric('getBucketAcl', params, expected, done);
         });
 
         it(`should push ${level} level putBucketAcl metrics`, done => {
             expected[`${timestampKey}:PutBucketAcl`] = '1';
-            testMetric('putBucketAcl', metric, expected, done);
+            testMetric('putBucketAcl', params, expected, done);
         });
 
         it(`should push ${level} level uploadPart metrics`, done => {
+            const newByteLength = 1024;
             expected[`${key}:storageUtilized:counter`] = `${newByteLength}`;
             expected[`${key}:storageUtilized`] =
                 [[timestamp, `${newByteLength}`]];
             expected[`${timestampKey}:incomingBytes`] = `${newByteLength}`;
             expected[`${timestampKey}:UploadPart`] = '1';
-            const params = Object.assign({}, metric, { newByteLength });
-            testMetric('uploadPart', params, expected, done);
+            const uploadPartParams = Object.assign({}, params,
+                { newByteLength });
+            testMetric('uploadPart', uploadPartParams, expected, done);
         });
 
         it(`should push ${level} level initiateMultipartUpload metrics`,
             done => {
                 expected[`${timestampKey}:InitiateMultipartUpload`] = '1';
-                testMetric('initiateMultipartUpload', metric, expected, done);
+                testMetric('initiateMultipartUpload', params, expected, done);
             });
 
         it(`should push ${level} level completeMultipartUpload metrics`,
@@ -113,7 +115,7 @@ describe('UtapiClient:: push metrics', () => {
                 expected[`${key}:numberOfObjects:counter`] = '1';
                 expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
                 expected[`${timestampKey}:CompleteMultipartUpload`] = '1';
-                testMetric('completeMultipartUpload', metric, expected, done);
+                testMetric('completeMultipartUpload', params, expected, done);
             });
     });
 });
