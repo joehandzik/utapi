@@ -181,7 +181,7 @@ export default class UtapiClient {
         this._checkTypes(params, ['bucket']);
         const metric = params.bucket ? params.bucket : params.account;
         this._logMetric(params, '_pushMetricCreateBucket', timestamp, log);
-        // set storage utilized and number of objects  counters to 0,
+        // set storage utilized and number of objects counters to 0,
         // indicating the start of the bucket timeline
         const cmds = getCounters(params).map(item => ['set', item, 0]);
         cmds.push(
