@@ -172,6 +172,7 @@ export default class UtapiClient {
     * bucket occcurs only once in a bucket's lifetime, counter is always 1
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -213,6 +214,7 @@ export default class UtapiClient {
     * Updates counter for DeleteBucket action on a Bucket resource
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -257,6 +259,7 @@ export default class UtapiClient {
     * Updates counter for ListBucket action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -273,6 +276,7 @@ export default class UtapiClient {
     * Updates counter for GetBucketAcl action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -317,6 +321,7 @@ export default class UtapiClient {
     * Updates counter for PutBucketAcl action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -333,6 +338,7 @@ export default class UtapiClient {
     * Updates counter for PutBucketWebsite action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -349,6 +355,7 @@ export default class UtapiClient {
     * Updates counter for UploadPart action on an object in a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
@@ -401,6 +408,7 @@ export default class UtapiClient {
     * Updates counter for Initiate Multipart Upload action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -418,6 +426,7 @@ export default class UtapiClient {
     * Updates counter for Complete Multipart Upload action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -463,6 +472,7 @@ export default class UtapiClient {
     * Updates counter for ListMultipartUploads action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -491,6 +501,7 @@ export default class UtapiClient {
     * Updates counter for ListMultipartUploadParts action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -508,6 +519,7 @@ export default class UtapiClient {
     * Updates counter for AbortMultipartUpload action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -525,6 +537,7 @@ export default class UtapiClient {
     * Updates counter for DeleteObject or MultiObjectDelete action
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} params.byteLength - size of the object to delete
     * @param {number} params.numberOfObjects - number of objects deleted
     * @param {number} timestamp - normalized timestamp of current time
@@ -604,8 +617,10 @@ export default class UtapiClient {
     * Updates counter for DeleteObject action on an object of Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} params.byteLength - size of the object deleted
     * @param {number} params.numberOfObjects - number of objects deleted
+    * @param {number} params.objectsCount - number of objects deleted
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -620,8 +635,10 @@ export default class UtapiClient {
     * Updates counter for MultiObjectDelete action
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} params.byteLength - size of the object deleted
     * @param {number} params.numberOfObjects - number of objects deleted
+    * @param {number} params.objectsCount - number of objects deleted
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -636,6 +653,7 @@ export default class UtapiClient {
     * Updates counter for GetObject action on an object in a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
@@ -668,6 +686,7 @@ export default class UtapiClient {
     * Updates counter for GetObjectAcl action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -685,6 +704,7 @@ export default class UtapiClient {
     * Updates counter for PutObject action on an object in a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} params.oldByteLength - previous size of object
     * in bytes if this action overwrote an existing object
@@ -772,6 +792,7 @@ export default class UtapiClient {
     * Updates counter for CopyObject action on an object in a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} params.oldByteLength - previous size of object in bytes
     * if this action overwrote an existing object
@@ -857,6 +878,7 @@ export default class UtapiClient {
     * Updates counter for PutObjectAcl action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -873,6 +895,7 @@ export default class UtapiClient {
     * Updates counter for HeadBucket action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
@@ -889,6 +912,7 @@ export default class UtapiClient {
     * Updates counter for HeadObject action on an object in a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
