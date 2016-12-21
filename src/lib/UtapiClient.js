@@ -109,7 +109,6 @@ export default class UtapiClient {
                     'must be an integer');
             }
         });
-        return undefined;
     }
 
     /**
@@ -135,27 +134,7 @@ export default class UtapiClient {
         if (this.disableClient) {
             return callback();
         }
-        const { bucket, byteLength, newByteLength, oldByteLength,
-            numberOfObjects } = params;
-        if (bucket) {
-            assert(typeof bucket === 'string', '`bucket` must be a string');
-        }
-        if (byteLength) {
-            assert(typeof byteLength === 'number', '`byteLength` must ' +
-                'be an integer');
-        }
-        if (newByteLength) {
-            assert(typeof newByteLength === 'number', '`newByteLength` must ' +
-                'be an integer');
-        }
-        if (oldByteLength && oldByteLength !== null) {
-            assert(typeof oldByteLength === 'number' || oldByteLength === null,
-                '`oldByteLength` must be an integer or `null`');
-        }
-        if (numberOfObjects) {
-            assert(typeof numberOfObjects === 'number', '`numberOfObjects` ' +
-                'must be an integer');
-        }
+        this._checkTypes(params);
         const log = this.log.newRequestLoggerFromSerializedUids(reqUid);
         const timestamp = UtapiClient.getNormalizedTimestamp();
         this[methods[metric]](params, timestamp, log, callback);
