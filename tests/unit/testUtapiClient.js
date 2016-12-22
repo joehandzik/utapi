@@ -111,6 +111,24 @@ describe('UtapiClient:: push metrics', () => {
         });
     });
 
+    it('should push metric for getBucketWebsite', done => {
+        c.pushMetric('getBucketWebsite', REQUID, { bucket }, () => {
+            const expected = {};
+            expected[`s3:buckets:${timestamp}:foo:GetBucketWebsite`] = '1';
+            assert.deepStrictEqual(memoryBackend.data, expected);
+            done();
+        });
+    });
+
+    it('should push metric for deleteBucketWebsite', done => {
+        c.pushMetric('deleteBucketWebsite', REQUID, { bucket }, () => {
+            const expected = {};
+            expected[`s3:buckets:${timestamp}:foo:DeleteBucketWebsite`] = '1';
+            assert.deepStrictEqual(memoryBackend.data, expected);
+            done();
+        });
+    });
+
     it('should push metric for uploadPart', done => {
         c.pushMetric('uploadPart', REQUID, { bucket, newByteLength }, () => {
             const expected = {
