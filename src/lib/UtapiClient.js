@@ -82,32 +82,35 @@ export default class UtapiClient {
 
    /**
     * Check the types of optional `params` object properties. This enforces
-    * object properties for particular push metric calls and property types.
+    * object properties for particular push metric calls and checks the
+    * existence of at least one metric type (e.g., bucket or account).
     * @param {object} params - params object with metric data
-    * @param {string} params.bucket - bucket name
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} params.byteLength - (optional) size of an object deleted
     * @param {number} params.newByteLength - (optional) new object size
     * @param {number|null} params.oldByteLength - (optional) old object size
     * (for object overwrites). This value can be `null` for a new object,
     * or >= 0 for an existing object with content-length 0 or greater than 0.
     * @param {number} params.numberOfObjects - (optional) number of obects
-    * @param {array} properties - properties to assert types for
+    * @param {array} properties - (option) properties to assert types for
     * @return {undefined}
     */
-    _checkTypes(params, properties) {
+    _checkTypes(params, properties = []) {
+        const types = ['bucket', 'account'];
+        const metrics = types.filter(type => type in params);
+        assert(metrics.length, 'Metric object must include a metric type');
+        metrics.forEach(metric => assert(typeof params[metric] === 'string',
+            `${metric} property must be a string`));
         properties.forEach(prop => {
-            assert(params[prop] !== undefined, 'Push metric call must ' +
-                `include an object with ${prop} property`);
-            if (prop === 'bucket') {
-                assert(typeof params[prop] === 'string', 'bucket property ' +
-                    'must be a string');
-            } else if (prop === 'oldByteLength') {
+            assert(params[prop], `Metric object must include ${prop} property`);
+            if (prop === 'oldByteLength') {
                 assert(typeof params[prop] === 'number' ||
-                    params[prop] === null, 'oldByteLength  property must be ' +
-                    'an integer or `null`');
+                    params[prop] === null, 'oldByteLength  property ' +
+                    'must be an integer or `null`');
             } else {
-                assert(typeof params[prop] === 'number', `${prop} property ` +
-                    'must be an integer');
+                assert(typeof params[prop] === 'number', `${prop} ` +
+                    'property must be an integer');
             }
         });
     }
@@ -160,7 +163,6 @@ export default class UtapiClient {
         if (this.disableClient) {
             return callback();
         }
-        this._checkTypes(params);
         const log = this.log.newRequestLoggerFromSerializedUids(reqUid);
         const timestamp = UtapiClient.getNormalizedTimestamp();
         this[methods[metric]](params, timestamp, log, callback);
@@ -179,8 +181,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricCreateBucket(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
-        const metric = params.bucket ? params.bucket : params.account;
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricCreateBucket', timestamp, log);
         // set storage utilized and number of objects counters to 0,
         // indicating the start of the bucket timeline
@@ -221,7 +222,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricDeleteBucket(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricDeleteBucket', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp, 'deleteBucket',
             log, callback);
@@ -231,18 +232,19 @@ export default class UtapiClient {
     * Updates counter for DeleteBucketWebsite action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
     * @return {undefined}
     */
     _pushMetricDeleteBucketWebsite(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         const { bucket } = params;
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricDeleteBucketWebsite',
             bucket, timestamp });
-        const key = genBucketKey(params, 'deleteBucketWebsite', timestamp);
+        const key = generateKey(params, 'deleteBucketWebsite', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -266,7 +268,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricListBucket(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricListBucket', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp, 'listBucket',
             log, callback);
@@ -283,7 +285,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricGetBucketAcl(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricGetBucketAcl', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp, 'getBucketAcl',
             log, callback);
@@ -293,18 +295,19 @@ export default class UtapiClient {
     * Updates counter for GetBucketWebsite action on a Bucket resource.
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
+    * @param {string} params.account - account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
     * @param {callback} callback - callback to call
     * @return {undefined}
     */
     _pushMetricGetBucketWebsite(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         const { bucket } = params;
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricGetBucketWebsite',
             bucket, timestamp });
-        const key = genBucketKey(params, 'getBucketWebsite', timestamp);
+        const key = generateKey(params, 'getBucketWebsite', timestamp);
         return this.ds.incr(key, err => {
             if (err) {
                 log.error('error incrementing counter', {
@@ -328,7 +331,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricPutBucketAcl(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricPutBucketAcl', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp, 'putBucketAcl',
             log, callback);
@@ -345,7 +348,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricPutBucketWebsite(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricPutBucketWebsite', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp,
             'putBucketWebsite', log, callback);
@@ -363,7 +366,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricUploadPart(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket', 'newByteLength']);
+        this._checkTypes(params, ['newByteLength']);
         const { bucket, newByteLength } = params;
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricUploadPart', bucket, timestamp });
@@ -415,7 +418,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricInitiateMultipartUpload(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricInitiateMultipartUpload', timestamp,
             log);
         return this._generateKeyAndIncrement(params, timestamp,
@@ -433,7 +436,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricCompleteMultipartUpload(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricCompleteMultipartUpload', timestamp,
             log);
         return this.ds.batch([
@@ -479,7 +482,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricListBucketMultipartUploads(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricListBucketMultipartUploads',
             timestamp, log);
         const key = generateKey(params, 'listBucketMultipartUploads',
@@ -508,7 +511,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricListMultipartUploadParts(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricListMultipartUploadParts',
             timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp,
@@ -526,7 +529,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricAbortMultipartUpload(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricAbortMultipartUpload', timestamp,
             log);
         return this._generateKeyAndIncrement(params, timestamp,
@@ -546,7 +549,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _genericPushMetricDeleteObject(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket', 'byteLength', 'numberOfObjects']);
+        this._checkTypes(params, ['byteLength', 'numberOfObjects']);
         const { bucket, byteLength, numberOfObjects } = params;
         const bucketAction = numberOfObjects === 1 ? 'deleteObject'
             : 'multiObjectDelete';
@@ -661,7 +664,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricGetObject(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket', 'newByteLength']);
+        this._checkTypes(params, ['newByteLength']);
         const { bucket, newByteLength } = params;
         log.trace('pushing metric', {
             method: 'UtapiClient.pushMetricGetObject', bucket, timestamp });
@@ -693,7 +696,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricGetObjectAcl(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricGetObjectAcl', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp,
             'getObjectAcl', log, callback);
@@ -714,7 +717,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricPutObject(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket', 'newByteLength', 'oldByteLength']);
+        this._checkTypes(params, ['newByteLength', 'oldByteLength']);
         const { bucket, newByteLength, oldByteLength } = params;
         let numberOfObjectsCounter;
         // if previous object size is null then it's a new object in a bucket
@@ -802,7 +805,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricCopyObject(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket', 'newByteLength', 'oldByteLength']);
+        this._checkTypes(params, ['newByteLength', 'oldByteLength']);
         const { bucket, newByteLength, oldByteLength } = params;
         let numberOfObjectsCounter;
         // if previous object size is null then it's a new object in a bucket
@@ -885,7 +888,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricPutObjectAcl(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricPutObjectAcl', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp,
             'putObjectAcl', log, callback);
@@ -902,7 +905,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricHeadBucket(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricHeadBucket', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp,
             'headBucket', log, callback);
@@ -919,7 +922,7 @@ export default class UtapiClient {
     * @return {undefined}
     */
     _pushMetricHeadObject(params, timestamp, log, callback) {
-        this._checkTypes(params, ['bucket']);
+        this._checkTypes(params);
         this._logMetric(params, '_pushMetricHeadObject', timestamp, log);
         return this._generateKeyAndIncrement(params, timestamp,
             'headObject', log, callback);
