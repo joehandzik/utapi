@@ -14,6 +14,17 @@ const metricObj = {
     account: 'foo-account',
 };
 
+// Set mock data of a particular size and count.
+function setData(objectSize, objectCount, timestamp, key) {
+    memoryBackend.data[`${key}:storageUtilized:counter`] = objectSize;
+    memoryBackend.data[`${key}:numberOfObjects:counter`] = objectCount;
+    memoryBackend.data[`${key}:storageUtilized`] =
+        [[timestamp, objectSize]];
+    memoryBackend.data[`${key}:numberOfObjects`] =
+        [[timestamp, objectCount]];
+    return undefined;
+}
+
 function getValues(metric) {
     const timestamp = getNormalizedTimestamp(Date.now());
     const name = metricObj[metric];
@@ -92,6 +103,20 @@ describe('UtapiClient:: push metrics', () => {
             testMetric('putBucketAcl', params, expected, done);
         });
 
+        it('should push metric for putBucketWebsite', done => {
+            expected[`${timestampKey}:PutBucketWebsite`] = '1';
+            testMetric('putBucketWebsite', params, expected, done);
+        });
+
+        it('should push metric for getBucketWebsite', done => {
+            expected[`${timestampKey}:GetBucketWebsite`] = '1';
+            testMetric('getBucketWebsite', params, expected, done);
+        });
+        it('should push metric for deleteBucketWebsite', done => {
+            expected[`${timestampKey}:DeleteBucketWebsite`] = '1';
+            testMetric('deleteBucketWebsite', params, expected, done);
+        });
+
         it(`should push ${level} level uploadPart metrics`, done => {
             const newByteLength = 1024;
             expected[`${key}:storageUtilized:counter`] = `${newByteLength}`;
@@ -105,17 +130,159 @@ describe('UtapiClient:: push metrics', () => {
         });
 
         it(`should push ${level} level initiateMultipartUpload metrics`,
-            done => {
-                expected[`${timestampKey}:InitiateMultipartUpload`] = '1';
-                testMetric('initiateMultipartUpload', params, expected, done);
-            });
+        done => {
+            expected[`${timestampKey}:InitiateMultipartUpload`] = '1';
+            testMetric('initiateMultipartUpload', params, expected, done);
+        });
 
         it(`should push ${level} level completeMultipartUpload metrics`,
-            done => {
-                expected[`${key}:numberOfObjects:counter`] = '1';
-                expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
-                expected[`${timestampKey}:CompleteMultipartUpload`] = '1';
-                testMetric('completeMultipartUpload', params, expected, done);
+        done => {
+            expected[`${key}:numberOfObjects:counter`] = '1';
+            expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
+            expected[`${timestampKey}:CompleteMultipartUpload`] = '1';
+            testMetric('completeMultipartUpload', params, expected,
+                done);
+        });
+
+        it(`should push ${level} listMultipartUploads level metrics`, done => {
+            expected[`${timestampKey}:ListBucketMultipartUploads`] = '1';
+            testMetric('listMultipartUploads', params, expected, done);
+        });
+
+        it(`should push ${level} listMultipartUploadParts level metrics`,
+        done => {
+            expected[`${timestampKey}:ListMultipartUploadParts`] = '1';
+            testMetric('listMultipartUploadParts', params, expected,
+                done);
+        });
+
+        it(`should push ${level} abortMultipartUpload level metrics`, done => {
+            expected[`${timestampKey}:AbortMultipartUpload`] = '1';
+            testMetric('abortMultipartUpload', params, expected, done);
+        });
+
+        it(`should push ${level} deleteObject level metrics`, done => {
+            // Set mock data of one, 1024 byte object for `deleteObject` to
+            // update.
+            setData('1024', '1', timestamp, key);
+            expected[`${key}:storageUtilized:counter`] = '0';
+            expected[`${key}:numberOfObjects:counter`] = '0';
+            expected[`${key}:storageUtilized`] = [[timestamp, '0']];
+            expected[`${key}:numberOfObjects`] = [[timestamp, '0']];
+            expected[`${timestampKey}:DeleteObject`] = '1';
+            const deleteObjectParams = Object.assign({}, params, {
+                byteLength: 1024,
+                numberOfObjects: 1,
             });
+            testMetric('deleteObject', deleteObjectParams, expected,
+                done);
+        });
+
+        it(`should push ${level} multiObjectDelete level metrics`, done => {
+            // Set mock data of two, 1024 byte objects for `multiObjectDelete`
+            // to update.
+            setData('2048', '2', timestamp, key);
+            expected[`${key}:storageUtilized:counter`] = '0';
+            expected[`${key}:numberOfObjects:counter`] = '0';
+            expected[`${key}:storageUtilized`] = [[timestamp, '0']];
+            expected[`${key}:numberOfObjects`] = [[timestamp, '0']];
+            expected[`${timestampKey}:MultiObjectDelete`] = '1';
+            const multiObjectDeleteParams = Object.assign({}, params, {
+                byteLength: 2048,
+                numberOfObjects: 2,
+            });
+            testMetric('multiObjectDelete', multiObjectDeleteParams,
+                expected, done);
+        });
+
+        it(`should push ${level} getObject level metrics`, done => {
+            expected[`${timestampKey}:outgoingBytes`] = '1024';
+            expected[`${timestampKey}:GetObject`] = '1';
+            const getObjectParams = Object.assign({}, params, {
+                newByteLength: 1024,
+            });
+            testMetric('getObject', getObjectParams, expected, done);
+        });
+
+        it(`should push ${level} getObjectAcl level metrics`, done => {
+            expected[`${timestampKey}:GetObjectAcl`] = '1';
+            testMetric('getObjectAcl', params, expected, done);
+        });
+
+        it(`should push ${level} putObject level metrics`, done => {
+            expected[`${key}:storageUtilized:counter`] = '1024';
+            expected[`${key}:numberOfObjects:counter`] = '1';
+            expected[`${key}:storageUtilized`] = [[timestamp, '1024']];
+            expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
+            expected[`${timestampKey}:PutObject`] = '1';
+            expected[`${timestampKey}:incomingBytes`] = '1024';
+            const putObjectParams = Object.assign({}, params, {
+                newByteLength: 1024,
+                oldByteLength: null,
+            });
+            testMetric('putObject', putObjectParams, expected, done);
+        });
+
+        it(`should push ${level} putObject level overwrite metrics`, done => {
+            // Set mock data of one, 1024 byte object for `putObject` to
+            // overwrite.
+            setData('1024', '1', timestamp, key);
+            // Counter should not increment as this is an overwrite.
+            expected[`${key}:storageUtilized:counter`] = '2048';
+            expected[`${key}:numberOfObjects:counter`] = '1';
+            expected[`${key}:storageUtilized`] = [[timestamp, '2048']];
+            expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
+            expected[`${timestampKey}:PutObject`] = '1';
+            expected[`${timestampKey}:incomingBytes`] = '2048';
+            const putObjectParams = Object.assign({}, params, {
+                newByteLength: 2048,
+                oldByteLength: 1024,
+            });
+            testMetric('putObject', putObjectParams, expected, done);
+        });
+
+        it(`should push ${level} copyObject level metrics`, done => {
+            expected[`${key}:storageUtilized:counter`] = '1024';
+            expected[`${key}:numberOfObjects:counter`] = '1';
+            expected[`${key}:storageUtilized`] = [[timestamp, '1024']];
+            expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
+            expected[`${timestampKey}:CopyObject`] = '1';
+            const copyObjectParams = Object.assign({}, params, {
+                newByteLength: 1024,
+                oldByteLength: null,
+            });
+            testMetric('copyObject', copyObjectParams, expected, done);
+        });
+
+        it(`should push ${level} copyObject level overwrite metrics`, done => {
+            // Set mock data of one, 1024 byte object for `copyObject` to
+            // overwrite.
+            setData('1024', '1', timestamp, key);
+            expected[`${key}:storageUtilized:counter`] = '2048';
+            expected[`${key}:numberOfObjects:counter`] = '1';
+            expected[`${key}:storageUtilized`] = [[timestamp, '2048']];
+            expected[`${key}:numberOfObjects`] = [[timestamp, '1']];
+            expected[`${timestampKey}:CopyObject`] = '1';
+            const copyObjectParams = Object.assign({}, params, {
+                newByteLength: 2048,
+                oldByteLength: 1024,
+            });
+            testMetric('copyObject', copyObjectParams, expected, done);
+        });
+
+        it(`should push ${level} putObjectAcl level metrics`, done => {
+            expected[`${timestampKey}:PutObjectAcl`] = '1';
+            testMetric('putObjectAcl', params, expected, done);
+        });
+
+        it('should push metric for headBucket', done => {
+            expected[`${timestampKey}:HeadBucket`] = '1';
+            testMetric('headBucket', params, expected, done);
+        });
+
+        it(`should push ${level} headObject level metrics`, done => {
+            expected[`${timestampKey}:HeadObject`] = '1';
+            testMetric('headObject', params, expected, done);
+        });
     });
 });

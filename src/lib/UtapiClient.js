@@ -21,8 +21,8 @@ const methods = {
     listMultipartUploads: '_pushMetricListBucketMultipartUploads',
     listMultipartUploadParts: '_pushMetricListMultipartUploadParts',
     abortMultipartUpload: '_pushMetricAbortMultipartUpload',
-    deleteObject: '_pushMetricDeleteObject',
-    multiObjectDelete: '_pushMetricMultiObjectDelete',
+    deleteObject: '_genericPushMetricDeleteObject',
+    multiObjectDelete: '_genericPushMetricDeleteObject',
     getObject: '_pushMetricGetObject',
     getObjectAcl: '_pushMetricGetObjectAcl',
     putObject: '_pushMetricPutObject',
@@ -103,7 +103,8 @@ export default class UtapiClient {
         metrics.forEach(metric => assert(typeof params[metric] === 'string',
             `${metric} property must be a string`));
         properties.forEach(prop => {
-            assert(params[prop], `Metric object must include ${prop} property`);
+            assert(params[prop] !== undefined, 'Metric object must include ' +
+                `${prop} property`);
             if (prop === 'oldByteLength') {
                 assert(typeof params[prop] === 'number' ||
                     params[prop] === null, 'oldByteLength  property ' +
@@ -541,7 +542,7 @@ export default class UtapiClient {
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - bucket name
     * @param {string} params.account - account ID
-    * @param {number} params.byteLength - size of the object to delete
+    * @param {number} params.byteLength - size of the object deleted
     * @param {number} params.numberOfObjects - number of objects deleted
     * @param {number} timestamp - normalized timestamp of current time
     * @param {object} log - Werelogs request logger
@@ -558,9 +559,9 @@ export default class UtapiClient {
             bucket, timestamp,
         });
         return this.ds.batch([
-            ['decrby', generateCounter(bucket, 'storageUtilizedCounter'),
+            ['decrby', generateCounter(params, 'storageUtilizedCounter'),
                 byteLength],
-            ['decrby', generateCounter(bucket, 'numberOfObjectsCounter'),
+            ['decrby', generateCounter(params, 'numberOfObjectsCounter'),
                 numberOfObjects],
             ['incr', generateKey(params, bucketAction, timestamp)],
         ], (err, results) => {
@@ -613,43 +614,6 @@ export default class UtapiClient {
                     timestamp, actionCounter]);
             return this.ds.batch(cmds, callback);
         });
-    }
-
-
-    /**
-    * Updates counter for DeleteObject action on an object of Bucket resource.
-    * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
-    * @param {number} params.byteLength - size of the object deleted
-    * @param {number} params.numberOfObjects - number of objects deleted
-    * @param {number} params.objectsCount - number of objects deleted
-    * @param {number} timestamp - normalized timestamp of current time
-    * @param {object} log - Werelogs request logger
-    * @param {callback} callback - callback to call
-    * @return {undefined}
-    */
-    _pushMetricDeleteObject(params, timestamp, log, callback) {
-        this._genericPushMetricDeleteObject(params, timestamp, log, callback);
-        return undefined;
-    }
-
-    /**
-    * Updates counter for MultiObjectDelete action
-    * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
-    * @param {number} params.byteLength - size of the object deleted
-    * @param {number} params.numberOfObjects - number of objects deleted
-    * @param {number} params.objectsCount - number of objects deleted
-    * @param {number} timestamp - normalized timestamp of current time
-    * @param {object} log - Werelogs request logger
-    * @param {callback} callback - callback to call
-    * @return {undefined}
-    */
-    _pushMetricMultiObjectDelete(params, timestamp, log, callback) {
-        this._genericPushMetricDeleteObject(params, timestamp, log, callback);
-        return undefined;
     }
 
     /**
