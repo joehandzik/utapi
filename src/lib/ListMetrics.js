@@ -8,7 +8,7 @@ import { getMetricFromKey, getKeys, generateStateKey } from './schema';
 export default class ListMetrics {
 
     /**
-     * Assign an instantce's metric property
+     * Assign the metric property to an instance of this class.
      * @param {string} metric - The metric type (e.g., 'buckets', 'account')
      */
     constructor(metric) {

@@ -1,3 +1,5 @@
+import assert from 'assert';
+
 // bucket schema
 const stateKeys = {
     storageUtilized: prefix => `${prefix}storageUtilized`,
@@ -42,11 +44,14 @@ function getSchemaData(params) {
         bucket: 'buckets',
         account: 'account',
     };
-    const level = Object.keys(params).filter(k => k in map)[0];
-    const data = {};
-    data.level = map[level];
-    data.id = params[level];
-    return data;
+    // Get the type that is sent in params.
+    const arr = Object.keys(params).filter(k => k in map);
+    assert(arr.length === 1, 'Schema params contains more than one metric');
+    const type = arr[0];
+    return {
+        level: map[type],
+        id: params[type],
+    };
 }
 
 function getSchemaPrefix(params, timestamp) {

@@ -26,10 +26,10 @@ function setMockData(objectSize, objectCount, timestamp, key) {
 // Get prefix values to construct the expected Redis schema keys.
 function getPrefixValues(metric, timestamp) {
     const name = metricTypeObject[metric];
-    const level = metric === 'bucket' ? 'buckets' : metric;
+    const type = metric === 'bucket' ? 'buckets' : metric;
     return {
-        key: `s3:${level}:${name}`,
-        timestampKey: `s3:${level}:${timestamp}:${name}`,
+        key: `s3:${type}:${name}`,
+        timestampKey: `s3:${type}:${timestamp}:${name}`,
     };
 }
 
