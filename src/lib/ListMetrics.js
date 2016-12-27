@@ -20,7 +20,7 @@ export default class ListMetrics {
      * @param {string} value - The value of the metric type
      * @return {object} obj - Object with a key-value pair for a schema method
      */
-    _getMetricObject(value) {
+    _getSchemaObject(value) {
         const key = this.metric === 'buckets' ? 'bucket' : this.metric;
         const obj = {};
         obj[key] = value;
@@ -147,7 +147,7 @@ export default class ListMetrics {
     getMetrics(value, range, datastore, log, cb) {
         const start = range[0];
         const end = range[1] || Date.now();
-        const obj = this._getMetricObject(value);
+        const obj = this._getSchemaObject(value);
 
         // find nearest neighbors for absolutes
         const storageUtilizedKey = generateStateKey(obj, 'storageUtilized');

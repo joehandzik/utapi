@@ -1,21 +1,20 @@
 import assert from 'assert';
-import Buckets from '../../src/lib/Buckets';
-import Account from '../../src/lib/Buckets';
 import MemoryBackend from '../../src/lib/backend/Memory';
 import Datastore from '../../src/lib/Datastore';
+import ListMetrics from '../../src/lib/ListMetrics';
 import { generateStateKey, generateKey } from '../../src/lib/schema';
 import { Logger } from 'werelogs';
 const logger = new Logger('UtapiTest');
 const memBackend = new MemoryBackend();
 const datastore = new Datastore();
-const metricObj = {
+const metricTypeObject = {
     bucket: 'foo-bucket',
     account: 'foo-account',
 };
 datastore.setClient(memBackend);
 
 // Create the metric response object for a given metric.
-function _getMetricRes(metric, value) {
+function _getMetricRes(type) {
     const metricRes = {
         timeRange: [],
         storageUtilized: [0, 0],
@@ -48,20 +47,24 @@ function _getMetricRes(metric, value) {
             's3:HeadObject': 0,
         },
     };
+    // Map defining the appropriate metric key in the response.
     const map = {
-        buckets: 'bucketName',
+        bucket: 'bucketName',
         account: 'accountId',
     };
-    metricRes[map[metric]] = value;
+    metricRes[map[type]] = metricTypeObject[type];
     return metricRes;
 }
 
-function assertMetrics(bucket, props, done) {
+function assertMetrics(type, metricName, props, done) {
     const timestamp = new Date().setMinutes(0, 0, 0);
     const timeRange = [timestamp, timestamp];
-    const expectedRes = _getMetricRes('buckets', 'foo-bucket');
+    const expectedRes = _getMetricRes(type);
     const expectedResProps = props || {};
-    Buckets.getMetrics(bucket, timeRange, datastore, logger,
+    // To instantiate bucket-level metrics, ListMetrics class takes 'buckets'.
+    const metricType = type === 'bucket' ? 'buckets' : type;
+    const MetricType = new ListMetrics(metricType);
+    MetricType.getMetrics(metricName, timeRange, datastore, logger,
         (err, res) => {
             assert.strictEqual(err, null);
             // overwrite operations metrics
@@ -76,110 +79,130 @@ function assertMetrics(bucket, props, done) {
         });
 }
 
-function testOps(keyIndex, metricindex, done) {
+/**
+ * Create the metric object for retrieving data from schema methods
+ * @param {string} metric - The value of the metric type
+ * @return {object} obj - Object with a key-value pair for a schema method
+ */
+function _getSchemaObject(metric) {
+    const obj = {};
+    obj[metric] = metricTypeObject[metric];
+    return obj;
+}
+
+function testOps(type, keyIndex, metricindex, done) {
+    const schemaObj = _getSchemaObject(type);
     const timestamp = new Date().setMinutes(0, 0, 0);
     let key;
     let props = {};
     let val;
     if (keyIndex === 'storageUtilized' || keyIndex === 'numberOfObjects') {
-        key = generateStateKey(metricObj, keyIndex);
+        key = generateStateKey(schemaObj, keyIndex);
         val = 1024;
         props[metricindex] = [val, val];
         memBackend.zadd(key, timestamp, val, () =>
-            assertMetrics(metricObj.bucket, props, done));
+            assertMetrics(type, schemaObj[type], props, done));
     } else if (keyIndex === 'incomingBytes' || keyIndex === 'outgoingBytes') {
-        key = generateKey(metricObj, keyIndex, timestamp);
+        key = generateKey(schemaObj, keyIndex, timestamp);
         val = 1024;
         props[metricindex] = val;
         memBackend.incrby(key, val, () =>
-            assertMetrics(metricObj.bucket, props, done));
+            assertMetrics(type, schemaObj[type], props, done));
     } else {
-        key = generateKey(metricObj, keyIndex, timestamp);
+        key = generateKey(schemaObj, keyIndex, timestamp);
         val = 1;
         props = { operations: {} };
         props.operations[metricindex] = val;
-        memBackend.incr(key, () => assertMetrics(metricObj.bucket, props,
-            done));
+        memBackend.incr(key, () =>
+            assertMetrics(type, schemaObj[type], props, done));
     }
 }
 
-describe('Get Bucket Metrics', () => {
-    afterEach(() => memBackend.flushDb());
+const metricTypes = Object.keys(metricTypeObject);
 
-    it('should list default (0s) metrics of a bucket', done =>
-        assertMetrics(metricObj.bucket, null, done));
+metricTypes.forEach(type => {
+    describe(`Get ${type} level metrics`, () => {
+        afterEach(() => memBackend.flushDb());
 
-    it('should return metrics for storage utilized', done =>
-        testOps('storageUtilized', 'storageUtilized', done));
+        it('should list default (0s) metrics of a bucket', done =>
+            assertMetrics(type, metricTypeObject[type], null, done));
 
-    it('should return metrics for number of objects', done =>
-        testOps('numberOfObjects', 'numberOfObjects', done));
+        it('should return metrics for storage utilized', done =>
+            testOps(type, 'storageUtilized', 'storageUtilized', done));
 
-    it('should return metrics for incoming bytes', done =>
-        testOps('incomingBytes', 'incomingBytes', done));
+        it('should return metrics for number of objects', done =>
+            testOps(type, 'numberOfObjects', 'numberOfObjects', done));
 
-    it('should return metrics for outgoing bytes', done =>
-        testOps('outgoingBytes', 'outgoingBytes', done));
+        it('should return metrics for incoming bytes', done =>
+            testOps(type, 'incomingBytes', 'incomingBytes', done));
 
-    it('should return metrics for delete bucket', done =>
-        testOps('deleteBucket', 's3:DeleteBucket', done));
+        it('should return metrics for outgoing bytes', done =>
+            testOps(type, 'outgoingBytes', 'outgoingBytes', done));
 
-    it('should return metrics for list bucket', done =>
-        testOps('listBucket', 's3:ListBucket', done));
+        it('should return metrics for delete bucket', done =>
+            testOps(type, 'deleteBucket', 's3:DeleteBucket', done));
 
-    it('should return metrics for get bucket acl', done =>
-        testOps('getBucketAcl', 's3:GetBucketAcl', done));
+        it('should return metrics for list bucket', done =>
+            testOps(type, 'listBucket', 's3:ListBucket', done));
 
-    it('should return metrics for put bucket acl', done =>
-        testOps('putBucketAcl', 's3:PutBucketAcl', done));
+        it('should return metrics for get bucket acl', done =>
+            testOps(type, 'getBucketAcl', 's3:GetBucketAcl', done));
 
-    it('should return metrics for put bucket website', done =>
-        testOps('putBucketWebsite', 's3:PutBucketWebsite', done));
+        it('should return metrics for put bucket acl', done =>
+            testOps(type, 'putBucketAcl', 's3:PutBucketAcl', done));
 
-    it('should return metrics for put object', done =>
-        testOps('putObject', 's3:PutObject', done));
+        it('should return metrics for put bucket website', done =>
+            testOps(type, 'putBucketWebsite', 's3:PutBucketWebsite', done));
 
-    it('should return metrics for copy object', done =>
-        testOps('copyObject', 's3:CopyObject', done));
+        it('should return metrics for put object', done =>
+            testOps(type, 'putObject', 's3:PutObject', done));
 
-    it('should return metrics for upload part', done =>
-        testOps('uploadPart', 's3:UploadPart', done));
+        it('should return metrics for copy object', done =>
+            testOps(type, 'copyObject', 's3:CopyObject', done));
 
-    it('should return metrics for list bucket multipart uploads', done =>
-        testOps('listBucketMultipartUploads', 's3:ListBucketMultipartUploads',
-            done));
+        it('should return metrics for upload part', done =>
+            testOps(type, 'uploadPart', 's3:UploadPart', done));
 
-    it('should return metrics for list multipart upload parts', done =>
-        testOps('listMultipartUploadParts', 's3:ListMultipartUploadParts',
-            done));
+        it('should return metrics for list bucket multipart uploads',
+            done => testOps(type, 'listBucketMultipartUploads',
+                's3:ListBucketMultipartUploads', done));
 
-    it('should return metrics for initiate multipart upload', done =>
-        testOps('initiateMultipartUpload', 's3:InitiateMultipartUpload', done));
+        it('should return metrics for list multipart upload parts', done =>
+            testOps(type, 'listMultipartUploadParts',
+                's3:ListMultipartUploadParts', done));
 
-    it('should return metrics for complete multipart upload', done =>
-        testOps('completeMultipartUpload', 's3:CompleteMultipartUpload', done));
+        it('should return metrics for initiate multipart upload', done =>
+            testOps(type, 'initiateMultipartUpload',
+                's3:InitiateMultipartUpload', done));
 
-    it('should return metrics for abort multipart upload', done =>
-        testOps('abortMultipartUpload', 's3:AbortMultipartUpload', done));
+        it('should return metrics for complete multipart upload', done =>
+            testOps(type, 'completeMultipartUpload',
+                's3:CompleteMultipartUpload', done));
 
-    it('should return metrics for delete object', done =>
-        testOps('deleteObject', 's3:DeleteObject', done));
+        it('should return metrics for abort multipart upload', done =>
+            testOps(type, 'abortMultipartUpload', 's3:AbortMultipartUpload',
+                done));
 
-    it('should return metrics for multiObjectDelete', done =>
-        testOps('multiObjectDelete', 's3:MultiObjectDelete', done));
+        it('should return metrics for delete object', done =>
+            testOps(type, 'deleteObject', 's3:DeleteObject', done));
 
-    it('should return metrics for get object', done =>
-        testOps('getObject', 's3:GetObject', done));
+        it('should return metrics for multiObjectDelete', done =>
+            testOps(type, 'multiObjectDelete', 's3:MultiObjectDelete',
+                done));
 
-    it('should return metrics for get object acl', done =>
-        testOps('getObjectAcl', 's3:GetObjectAcl', done));
+        it('should return metrics for get object', done =>
+            testOps(type, 'getObject', 's3:GetObject', done));
 
-    it('should return metrics for put object acl', done =>
-        testOps('putObjectAcl', 's3:PutObjectAcl', done));
+        it('should return metrics for get object acl', done =>
+            testOps(type, 'getObjectAcl', 's3:GetObjectAcl', done));
 
-    it('should return metrics for head bucket', done =>
-        testOps('headBucket', 's3:HeadBucket', done));
+        it('should return metrics for put object acl', done =>
+            testOps(type, 'putObjectAcl', 's3:PutObjectAcl', done));
 
-    it('should return metrics for head object', done =>
-        testOps('headObject', 's3:HeadObject', done));
+        it('should return metrics for head bucket', done =>
+            testOps(type, 'headBucket', 's3:HeadBucket', done));
+
+        it('should return metrics for head object', done =>
+            testOps(type, 'headObject', 's3:HeadObject', done));
+    });
 });
