@@ -135,22 +135,16 @@ export default class UtapiClient {
         });
     }
 
-    _getLogObject(params, method, timestamp) {
-        const obj = {
-            method: `UtapiClient.${method}`,
-            timestamp,
-        };
-        const type = metricTypes.filter(type => type in params);
-        assert(type.length === 1, 'Cannot log more than one metric type');
-        obj[type] = params[type];
-        return obj;
-    }
-
      /*
      * Utility function to log the metric being pushed.
      */
     _logMetric(params, method, timestamp, log) {
-        const logObject = this._getLogObject(params, method, timestamp);
+        const logObject = {
+            method: `UtapiClient.${method}`,
+            timestamp,
+        };
+        const type = metricTypes.filter(type => type in params);
+        logObject[type] = params[type];
         log.trace('pushing metric', logObject);
     }
 
