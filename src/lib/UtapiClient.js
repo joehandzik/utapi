@@ -118,23 +118,6 @@ export default class UtapiClient {
         });
     }
 
-    /*
-    * Utility function to use with push metric calls.
-    */
-    _generateKeyAndIncrement(params, timestamp, action, log, callback) {
-        const key = generateKey(params, action, timestamp);
-        return this.ds.incr(key, err => {
-            if (err) {
-                log.error('error incrementing counter', {
-                    method: `UtapiClient.${methods[action]}`,
-                    error: err,
-                });
-                return callback(errors.InternalError);
-            }
-            return callback();
-        });
-    }
-
      /*
      * Utility function to log the metric being pushed.
      */
@@ -263,8 +246,17 @@ export default class UtapiClient {
     _genericPushMetric(params, timestamp, action, log, callback) {
         this._checkTypes(params);
         this._logMetric(params, '_genericPushMetric', timestamp, log);
-        return this._generateKeyAndIncrement(params, timestamp, action, log,
-            callback);
+        const key = generateKey(params, action, timestamp);
+        return this.ds.incr(key, err => {
+            if (err) {
+                log.error('error incrementing counter', {
+                    method: 'UtapiClient._genericPushMetric',
+                    error: err,
+                });
+                return callback(errors.InternalError);
+            }
+            return callback();
+        });
     }
 
     /**
