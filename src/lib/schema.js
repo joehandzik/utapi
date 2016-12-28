@@ -1,6 +1,4 @@
-import assert from 'assert';
-
-// bucket schema
+// metric type schema
 const stateKeys = {
     storageUtilized: prefix => `${prefix}storageUtilized`,
     numberOfObjects: prefix => `${prefix}numberOfObjects`,
@@ -39,62 +37,58 @@ const keys = {
     outgoingBytes: prefix => `${prefix}outgoingBytes`,
 };
 
-function getSchemaData(params) {
+/**
+* Creates the appropriate prefix for schema keys
+* @param {object} params - object with metric type and id as a property
+* @param {number} timestamp - (optional) unix timestamp normalized to the
+* nearest 15 min.
+* @return {string} - prefix for the schema key
+*/
+function getSchemaPrefix(params, timestamp) {
+    // Map of possible metric types and their associated prefix level keys
     const map = {
         bucket: 'buckets',
         account: 'account',
     };
-    // Get the type that is sent in params.
-    const arr = Object.keys(params).filter(k => k in map);
-    assert(arr.length === 1, 'Schema params contains more than one metric');
-    const type = arr[0];
-    return {
-        level: map[type],
-        id: params[type],
-    };
-}
-
-function getSchemaPrefix(params, timestamp) {
-    const { level, id } = getSchemaData(params);
+    const metricType = Object.keys(params).find(k => k in map);
+    const level = map[metricType];
+    const id = params[metricType];
     const prefix = timestamp === undefined ? `s3:${level}:${id}:` :
         `s3:${level}:${timestamp}:${id}:`;
     return prefix;
 }
 
 /**
-* Returns the metric key in schema for the bucket
-* @param {string} params - bucket id
-* @param {string} metric - metric id
+* Returns the metric key for the metric type
+* @param {object} params - object with metric type and id as a property
+* @param {string} metric - metric to generate a key for
 * @param {number} timestamp - unix timestamp normalized to the nearest 15 min.
 * @return {string} - schema key
 */
-
 export function generateKey(params, metric, timestamp) {
     const prefix = getSchemaPrefix(params, timestamp);
     return keys[metric](prefix);
 }
 
 /**
-* Returns a list of the counters for a bucket
-* @param {string} params - bucket id
+* Returns a list of the counters for a metric type
+* @param {object} params - object with metric type and id as a property
 * @return {string[]} - array of keys for counters
 */
 export function getCounters(params) {
     const prefix = getSchemaPrefix(params);
-    return Object.keys(counters).map(
-        item => counters[item](prefix));
+    return Object.keys(counters).map(item => counters[item](prefix));
 }
 
 /**
-* Returns a list of all keys for a bucket
-* @param {string} params - bucket id
+* Returns a list of all keys for a metric type
+* @param {object} params - object with metric type and id as a property
 * @param {number} timestamp - unix timestamp normalized to the nearest 15 min.
 * @return {string[]} - list of keys
 */
 export function getKeys(params, timestamp) {
     const prefix = getSchemaPrefix(params, timestamp);
-    return Object.keys(keys)
-        .map(item => keys[item](prefix));
+    return Object.keys(keys).map(item => keys[item](prefix));
 }
 
 /**
@@ -105,24 +99,24 @@ export function getKeys(params, timestamp) {
 */
 export function getMetricFromKey(key, value) {
     // s3:buckets:1473451689898:demo:putObject
+    // s3:account:1473451689898:demo:putObject
     return key.slice(25).replace(`${value}:`, '');
 }
 
 /**
-* Returns the keys representing state of the bucket
-* @param {string} params - bucket id
+* Returns the keys representing state of the metric type
+* @param {object} params - object with metric type and id as a property
 * @return {string[]} - list of keys
 */
 export function getStateKeys(params) {
     const prefix = getSchemaPrefix(params);
-    return Object.keys(stateKeys)
-        .map(item => stateKeys[item](prefix));
+    return Object.keys(stateKeys).map(item => stateKeys[item](prefix));
 }
 
 /**
-* Returns the state metric key in schema for the bucket
-* @param {string} params - bucket id
-* @param {string} metric - metric id
+* Returns the state metric key for the metric type
+* @param {object} params - object with metric type and id as a property
+* @param {string} metric - metric to generate a key for
 * @return {string} - schema key
 */
 export function generateStateKey(params, metric) {
@@ -130,6 +124,12 @@ export function generateStateKey(params, metric) {
     return stateKeys[metric](prefix);
 }
 
+/**
+* Returns the counter metric key for the metric type
+* @param {object} params - object with metric type and id as a property
+* @param {string} metric - metric to generate a key for
+* @return {string} - schema key
+*/
 export function generateCounter(params, metric) {
     const prefix = getSchemaPrefix(params);
     return counters[metric](prefix);

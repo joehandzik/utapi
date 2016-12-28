@@ -84,9 +84,9 @@ export default class UtapiClient {
     _noop() {}
 
    /**
-    * Check the types of optional `params` object properties. This enforces
-    * object properties for particular push metric calls and checks the
-    * existence of at least one metric type (e.g., bucket or account).
+    * Check the types of `params` object properties. This enforces object
+    * properties for particular push metric calls and enforces the existence of
+    * at least one metric type (e.g., 'bucket' or 'account').
     * @param {object} params - params object with metric data
     * @param {string} params.bucket - (optional) bucket name
     * @param {string} params.account - (optional) account ID
@@ -126,8 +126,8 @@ export default class UtapiClient {
             method: `UtapiClient.${method}`,
             timestamp,
         };
-        const type = metricTypes.filter(type => type in params);
-        logObject[type] = params[type];
+        const metricType = metricTypes.find(type => type in params);
+        logObject[metricType] = params[metricType];
         log.trace('pushing metric', logObject);
     }
 
@@ -152,13 +152,13 @@ export default class UtapiClient {
 
     /**
     * Generic method exposed by the client to push a metric with some values.
-    * `params` can be expanded to provide metrics for other granularities
-    * (e.g. service, account, user).
+    * `params` can be expanded to provide metrics for metric granularities
+    * (e.g. 'bucket', 'account').
     * @param {string} metric - metric to be published
     * @param {string} reqUid - Request Unique Identifier
     * @param {object} params - params object with metric data
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account id
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account id
     * @param {number} params.byteLength - (optional) size of an object deleted
     * @param {number} params.newByteLength - (optional) new object size
     * @param {number|null} params.oldByteLength - (optional) old object size
@@ -190,11 +190,11 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for CreateBucket action on a Bucket resource. Since create
-    * bucket occcurs only once in a bucket's lifetime, counter is always 1
+    * Updates counter for CreateBucket action. Bucket occcurs only once in a
+    * bucket's lifetime, counter is always 1
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {string} action - action to push metric for
     * @param {object} log - Werelogs request logger
@@ -233,10 +233,10 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for an action
+    * Updates counter for the given action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {string} action - action metric to update
     * @param {object} log - Werelogs request logger
@@ -260,10 +260,10 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for UploadPart action on an object in a Bucket resource.
+    * Updates counter for UploadPart action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} timestamp - normalized timestamp of current time
     * @param {string} action - action metric to update
@@ -313,10 +313,10 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for Complete Multipart Upload action on a Bucket resource.
+    * Updates counter for CompleteMultipartUpload action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {string} action - action metric to update
     * @param {object} log - Werelogs request logger
@@ -360,10 +360,10 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for ListMultipartUploads action on a Bucket resource.
+    * Updates counter for listBucketMultipartUploads action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} timestamp - normalized timestamp of current time
     * @param {string} action - action metric to update
     * @param {object} log - Werelogs request logger
@@ -379,8 +379,8 @@ export default class UtapiClient {
     /**
     * Updates counter for DeleteObject or MultiObjectDelete action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} params.byteLength - size of the object deleted
     * @param {number} params.numberOfObjects - number of objects deleted
     * @param {number} timestamp - normalized timestamp of current time
@@ -453,10 +453,10 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for GetObject action on an object in a Bucket resource.
+    * Updates counter for GetObject action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} timestamp - normalized timestamp of current time
     * @param {string} action - action metric to update
@@ -487,10 +487,10 @@ export default class UtapiClient {
 
 
     /**
-    * Updates counter for PutObject action on an object in a Bucket resource.
+    * Updates counter for PutObject action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} params.oldByteLength - previous size of object
     * in bytes if this action overwrote an existing object
@@ -575,10 +575,10 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for CopyObject action on an object in a Bucket resource.
+    * Updates counter for CopyObject action
     * @param {object} params - params for the metrics
-    * @param {string} params.bucket - bucket name
-    * @param {string} params.account - account ID
+    * @param {string} params.bucket - (optional) bucket name
+    * @param {string} params.account - (optional) account ID
     * @param {number} params.newByteLength - size of object in bytes
     * @param {number} params.oldByteLength - previous size of object in bytes
     * if this action overwrote an existing object
