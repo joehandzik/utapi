@@ -1,4 +1,5 @@
 import assert from 'assert';
+import async from 'async';
 import { Logger } from 'werelogs';
 import Datastore from './Datastore';
 import { generateKey, generateCounter, getCounters, generateStateKey }
@@ -200,9 +201,13 @@ export default class UtapiClient {
         const timestamp = UtapiClient.getNormalizedTimestamp();
         const paramsArray = this._getParamsArr(params);
         // Push metrics for each metric type included in the `params` object.
-        paramsArray.forEach(metricParams => {
-            this[methods[metric]](metricParams, timestamp, metric, log,
-                callback);
+        async.each(paramsArray, (params, callback) => {
+            this[methods[metric]](params, timestamp, metric, log, callback);
+        }, err => {
+            if (err) {
+                return callback(err);
+            }
+            return callback();
         });
         return this;
     }
