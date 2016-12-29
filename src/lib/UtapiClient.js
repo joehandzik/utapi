@@ -190,8 +190,7 @@ export default class UtapiClient {
     }
 
     /**
-    * Updates counter for CreateBucket action. Bucket occcurs only once in a
-    * bucket's lifetime, counter is always 1
+    * Updates counter for CreateBucket action
     * @param {object} params - params for the metrics
     * @param {string} params.bucket - (optional) bucket name
     * @param {string} params.account - (optional) account ID
@@ -215,11 +214,16 @@ export default class UtapiClient {
             ['zremrangebyscore', generateStateKey(params, 'numberOfObjects'),
                 timestamp, timestamp],
             // add new timestamp entries
-            ['set', generateKey(params, action, timestamp), 1],
-            ['zadd', generateStateKey(params, 'storageUtilized'), timestamp,
-                0],
+            ['zadd', generateStateKey(params, 'storageUtilized'), timestamp, 0],
             ['zadd', generateStateKey(params, 'numberOfObjects'), timestamp, 0]
         );
+        // CreateBucket action occurs only once in a bucket's lifetime, so for
+        // bucket-level metrics, counter is always 1.
+        if ('bucket' in params) {
+            cmds.push(['set', generateKey(params, action, timestamp), 1]);
+        } else {
+            cmds.push(['incr', generateKey(params, action, timestamp)]);
+        }
         return this.ds.batch(cmds, err => {
             if (err) {
                 log.error('error incrementing counter', {

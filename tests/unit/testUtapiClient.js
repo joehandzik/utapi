@@ -14,7 +14,7 @@ const metricTypes = {
     account: 'foo-account',
 };
 
-// Get prefix values to construct the expected Redis schema keys.
+// Get prefix values to construct the expected Redis schema keys
 function getPrefixValues(metrics, timestamp) {
     const arr = [];
     Object.keys(metricTypes).forEach(metric => {
@@ -28,22 +28,22 @@ function getPrefixValues(metrics, timestamp) {
     return arr;
 }
 
-// Set mock data of a particular size and count.
-function setMockData(objectSize, objectCount, timestamp, cb) {
+// Set mock data of a particular storageUtilized and numberOfObjects
+function setMockData(storageUtilized, numberOfObjects, timestamp, cb) {
     const prefixValuesArr = getPrefixValues(metricTypes, timestamp);
     prefixValuesArr.forEach(type => {
         const { key } = type;
-        memoryBackend.data[`${key}:storageUtilized:counter`] = objectSize;
+        memoryBackend.data[`${key}:storageUtilized:counter`] = storageUtilized;
         memoryBackend.data[`${key}:storageUtilized`] = [[timestamp,
-            objectSize]];
-        memoryBackend.data[`${key}:numberOfObjects:counter`] = objectCount;
+            storageUtilized]];
+        memoryBackend.data[`${key}:numberOfObjects:counter`] = numberOfObjects;
         memoryBackend.data[`${key}:numberOfObjects`] = [[timestamp,
-            objectCount]];
+            numberOfObjects]];
     });
     return cb();
 }
 
-// Get the expected object for comparison.
+// Get the expected object for comparison
 function getObject(timestamp, data) {
     const obj = {};
     const prefixValuesArr = getPrefixValues(metricTypes, timestamp);
@@ -65,7 +65,6 @@ function getObject(timestamp, data) {
     return obj;
 }
 
-// function testMetric(metric, metricTypes, expected, timestampKey, cb) {
 function testMetric(metric, params, expected, cb) {
     const c = new UtapiClient();
     c.setDataStore(ds);
