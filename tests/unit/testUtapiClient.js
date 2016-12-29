@@ -13,6 +13,7 @@ const metricTypes = {
     bucket: 'foo-bucket',
     account: 'foo-account',
     user: 'foo-user',
+    service: 's3',
 };
 
 // Get prefix values to construct the expected Redis schema keys
@@ -21,10 +22,18 @@ function getPrefixValues(metrics, timestamp) {
     Object.keys(metricTypes).forEach(metric => {
         const name = metricTypes[metric];
         const type = metric === 'bucket' ? 'buckets' : metric;
-        arr.push({
-            key: `s3:${type}:${name}`,
-            timestampKey: `s3:${type}:${timestamp}:${name}`,
-        });
+        if (type !== 'service') {
+            const service = metricTypes.service;
+            arr.push({
+                key: `${service}:${type}:${name}`,
+                timestampKey: `${service}:${type}:${timestamp}:${name}`,
+            });
+        } else {
+            arr.push({
+                key: `${name}`,
+                timestampKey: `${name}:${timestamp}`,
+            });
+        }
     });
     return arr;
 }

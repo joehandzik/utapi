@@ -33,7 +33,7 @@ const methods = {
     headObject: '_genericPushMetric',
 };
 
-const metricTypes = ['bucket', 'account', 'user'];
+const metricTypes = ['bucket', 'account', 'user', 'service'];
 
 export default class UtapiClient {
     constructor(config) {
@@ -140,6 +140,9 @@ export default class UtapiClient {
         types.forEach(type => {
             const typeObj = {};
             typeObj[type] = params[type];
+            if (type !== 'service') {
+                typeObj.service = params.service;
+            }
             Object.keys(params).forEach(k => {
                 if (types.indexOf(k) < 0) {
                     typeObj[k] = params[k];

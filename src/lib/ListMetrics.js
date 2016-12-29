@@ -65,6 +65,7 @@ export default class ListMetrics {
             buckets: 'bucketName',
             account: 'accountId',
             user: 'userName',
+            service: 'serviceName',
         };
         metricRes[map[this.metric]] = value;
         return metricRes;

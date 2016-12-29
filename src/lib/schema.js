@@ -50,12 +50,23 @@ function getSchemaPrefix(params, timestamp) {
         bucket: 'buckets',
         account: 'account',
         user: 'user',
+        service: 'service',
     };
     const metricType = Object.keys(params).find(k => k in map);
     const level = map[metricType];
     const id = params[metricType];
-    const prefix = timestamp === undefined ? `s3:${level}:${id}:` :
-        `s3:${level}:${timestamp}:${id}:`;
+    let service;
+    if (metricType !== 'service') {
+        service = params.service;
+    }
+    let prefix;
+    if (service) {
+        prefix = timestamp === undefined ? `${service}:${level}:${id}:` :
+            `${service}:${level}:${timestamp}:${id}:`;
+    } else {
+        prefix = timestamp === undefined ? `${id}:` :
+            `${id}:${timestamp}:`;
+    }
     return prefix;
 }
 
@@ -100,12 +111,14 @@ export function getKeys(params, timestamp) {
 * @return {string} metric - S3 metric
 */
 export function getMetricFromKey(key, value, metricType) {
-    // s3:user:1483048800000:foo-user:DeleteBucket
     if (metricType === 'user') {
-        return key.slice(31).replace(`${value}:`, '');
+        return key.slice(23).replace(`${value}:`, '');
+    } else if (metricType === 'account') {
+        return key.slice(26).replace(`${value}:`, '');
+    } else if (metricType === 'service') {
+        return key.slice(17).replace(`${value}:`, '');
     }
     // s3:buckets:1473451689898:demo:putObject
-    // s3:account:1473451689898:demo:putObject
     return key.slice(25).replace(`${value}:`, '');
 }
 
