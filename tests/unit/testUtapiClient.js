@@ -12,6 +12,7 @@ const REQUID = 'aaaaaaaaaaaaaaaaaaa';
 const metricTypes = {
     bucket: 'foo-bucket',
     account: 'foo-account',
+    user: 'foo-user',
 };
 
 // Get prefix values to construct the expected Redis schema keys

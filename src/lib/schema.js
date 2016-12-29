@@ -49,6 +49,7 @@ function getSchemaPrefix(params, timestamp) {
     const map = {
         bucket: 'buckets',
         account: 'account',
+        user: 'user',
     };
     const metricType = Object.keys(params).find(k => k in map);
     const level = map[metricType];
@@ -95,9 +96,14 @@ export function getKeys(params, timestamp) {
 * Returns metric from key
 * @param {string} key - schema key
 * @param {string} value - the metric value
+* @param {string} metricType - the metric type
 * @return {string} metric - S3 metric
 */
-export function getMetricFromKey(key, value) {
+export function getMetricFromKey(key, value, metricType) {
+    // s3:user:1483048800000:foo-user:DeleteBucket
+    if (metricType === 'user') {
+        return key.slice(31).replace(`${value}:`, '');
+    }
     // s3:buckets:1473451689898:demo:putObject
     // s3:account:1473451689898:demo:putObject
     return key.slice(25).replace(`${value}:`, '');

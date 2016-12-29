@@ -8,8 +8,9 @@ const logger = new Logger('UtapiTest');
 const memBackend = new MemoryBackend();
 const datastore = new Datastore();
 const metricTypeObject = {
-    bucket: 'foo-bucket',
-    account: 'foo-account',
+    // bucket: 'foo-bucket',
+    // account: 'foo-account',
+    user: 'foo-user',
 };
 datastore.setClient(memBackend);
 
@@ -51,6 +52,7 @@ function getMetricRes(type) {
     const map = {
         bucket: 'bucketName',
         account: 'accountId',
+        user: 'userName',
     };
     metricRes[map[type]] = metricTypeObject[type];
     return metricRes;

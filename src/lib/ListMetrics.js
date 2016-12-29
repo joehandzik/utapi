@@ -64,6 +64,7 @@ export default class ListMetrics {
         const map = {
             buckets: 'bucketName',
             account: 'accountId',
+            user: 'userName',
         };
         metricRes[map[this.metric]] = value;
         return metricRes;
@@ -219,7 +220,7 @@ export default class ListMetrics {
                         cmd: key,
                     });
                 } else {
-                    const m = getMetricFromKey(key, value);
+                    const m = getMetricFromKey(key, value, this.metric);
                     let count = parseInt(item[1], 10);
                     count = Number.isNaN(count) ? 0 : count;
                     if (m === 'incomingBytes' || m === 'outgoingBytes') {

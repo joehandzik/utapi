@@ -33,7 +33,7 @@ const methods = {
     headObject: '_genericPushMetric',
 };
 
-const metricTypes = ['bucket', 'account'];
+const metricTypes = ['bucket', 'account', 'user'];
 
 export default class UtapiClient {
     constructor(config) {
