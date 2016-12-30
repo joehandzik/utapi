@@ -15,7 +15,7 @@ const metricTypes = {
 };
 
 // Get prefix values to construct the expected Redis schema keys
-function getPrefixValues(metrics, timestamp) {
+function getPrefixValues(timestamp) {
     const arr = [];
     Object.keys(metricTypes).forEach(metric => {
         const name = metricTypes[metric];
@@ -30,7 +30,7 @@ function getPrefixValues(metrics, timestamp) {
 
 // Set mock data of a particular storageUtilized and numberOfObjects
 function setMockData(storageUtilized, numberOfObjects, timestamp, cb) {
-    const prefixValuesArr = getPrefixValues(metricTypes, timestamp);
+    const prefixValuesArr = getPrefixValues(timestamp);
     prefixValuesArr.forEach(type => {
         const { key } = type;
         memoryBackend.data[`${key}:storageUtilized:counter`] = storageUtilized;
@@ -46,7 +46,7 @@ function setMockData(storageUtilized, numberOfObjects, timestamp, cb) {
 // Get the expected object for comparison
 function getObject(timestamp, data) {
     const obj = {};
-    const prefixValuesArr = getPrefixValues(metricTypes, timestamp);
+    const prefixValuesArr = getPrefixValues(timestamp);
     prefixValuesArr.forEach(type => {
         const { key, timestampKey } = type;
         obj[`${timestampKey}:${data.action}`] = '1';
