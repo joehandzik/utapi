@@ -19,7 +19,7 @@ function getPrefixValues(timestamp) {
     const arr = [];
     Object.keys(metricTypes).forEach(metric => {
         const name = metricTypes[metric];
-        const type = metric === 'bucket' ? 'buckets' : metric;
+        const type = `${metric}s`;
         arr.push({
             key: `s3:${type}:${name}`,
             timestampKey: `s3:${type}:${timestamp}:${name}`,

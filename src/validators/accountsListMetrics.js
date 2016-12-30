@@ -8,6 +8,6 @@ import Validator from './Validator';
 export default function accountsListMetrics(dict) {
     return new Validator({
         timeRange: true,
-        account: true,
+        accounts: true,
     }, dict);
 }

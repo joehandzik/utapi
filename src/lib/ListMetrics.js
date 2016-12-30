@@ -9,7 +9,7 @@ export default class ListMetrics {
 
     /**
      * Assign the metric property to an instance of this class
-     * @param {string} metric - The metric type (e.g., 'buckets', 'account')
+     * @param {string} metric - The metric type (e.g., 'buckets', 'accounts')
      */
     constructor(metric) {
         this.metric = metric;
@@ -21,7 +21,8 @@ export default class ListMetrics {
      * @return {object} obj - Object with a key-value pair for a schema method
      */
     _getSchemaObject(value) {
-        const key = this.metric === 'buckets' ? 'bucket' : this.metric;
+        // key for the schema should not be plural metric type, so remove 's'.
+        const key = this.metric.slice(0, this.metric.length - 1);
         const obj = {};
         obj[key] = value;
         return obj;
@@ -63,7 +64,7 @@ export default class ListMetrics {
         };
         const map = {
             buckets: 'bucketName',
-            account: 'accountId',
+            accounts: 'accountId',
         };
         metricRes[map[this.metric]] = value;
         return metricRes;
@@ -219,7 +220,7 @@ export default class ListMetrics {
                         cmd: key,
                     });
                 } else {
-                    const m = getMetricFromKey(key, value);
+                    const m = getMetricFromKey(key, value, this.metric);
                     let count = parseInt(item[1], 10);
                     count = Number.isNaN(count) ? 0 : count;
                     if (m === 'incomingBytes' || m === 'outgoingBytes') {

@@ -62,7 +62,7 @@ function assertMetrics(type, metricName, props, done) {
     const expectedRes = getMetricRes(type);
     const expectedResProps = props || {};
     // To instantiate bucket-level metrics, ListMetrics class uses 'buckets'.
-    const metricType = type === 'bucket' ? 'buckets' : type;
+    const metricType = `${type}s`;
     const MetricType = new ListMetrics(metricType);
     MetricType.getMetrics(metricName, timeRange, datastore, logger,
         (err, res) => {

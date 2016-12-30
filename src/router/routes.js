@@ -20,7 +20,7 @@ export default [
         handler: AccountsHandler.listMetrics,
         method: 'POST',
         action: 'ListMetrics',
-        resource: 'account',
+        resource: 'accounts',
         responseBuilder: accountsListMetricsResponse,
         statusCode: 200,
     },

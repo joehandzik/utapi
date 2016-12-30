@@ -1,5 +1,5 @@
 import ListMetrics from './ListMetrics';
 
-const Account = new ListMetrics('account');
+const Account = new ListMetrics('accounts');
 
 export default Account;

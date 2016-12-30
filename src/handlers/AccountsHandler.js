@@ -7,7 +7,7 @@ import Accounts from '../lib/Account';
 export default class AccountsHandler {
 
     /**
-    * List metrics for the given list of buckets
+    * List metrics for the given list of accounts
     * @param {UtapiRequest} utapiRequest - UtapiRequest instance
     * @param {callback} cb - callback
     * @return {undefined}
