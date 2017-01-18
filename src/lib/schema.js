@@ -49,12 +49,25 @@ function getSchemaPrefix(params, timestamp) {
     const map = {
         bucket: 'buckets',
         accountId: 'accounts',
+        service: 'services',
     };
+    // Return the first property in `params`, thus the service property needs to
+    // remain last in `map`.
+    //
+    // TODO: REMOVE DEPENDENCY ON OBJECT ORDER USING ['buckets', 'accounts']
     const metricType = Object.keys(params).find(k => k in map);
     const level = map[metricType];
     const id = params[metricType];
-    const prefix = timestamp === undefined ? `s3:${level}:${id}:` :
-        `s3:${level}:${timestamp}:${id}:`;
+    // Use the service property from `params` to consruct the schema.
+    if (metricType !== 'service') {
+        const service = params.service;
+        const prefix = timestamp === undefined ? `${service}:${level}:${id}:` :
+            `${service}:${level}:${timestamp}:${id}:`;
+        return prefix;
+    }
+    // TODO: Update service level key
+    const prefix = timestamp === undefined ? `${id}:${level}:${id}:` :
+        `${id}:${level}:${timestamp}:${id}:`;
     return prefix;
 }
 
@@ -105,7 +118,10 @@ export function getMetricFromKey(key, value, metricType) {
     } else if (metricType === 'accounts') {
         // s3:accounts:1473451689898:demo:putObject
         return key.slice(26).replace(`${value}:`, '');
-    }
+    } else if (metricType === 'services') {
+        // s3:services:1484776800000:s3:outgoingBytes
+        return key.slice(26).replace(`${value}:`, '');
+      }
     return undefined;
 }
 

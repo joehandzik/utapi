@@ -12,6 +12,7 @@ const REQUID = 'aaaaaaaaaaaaaaaaaaa';
 const metricTypes = {
     bucket: 'foo-bucket',
     accountId: 'foo-account',
+    service: 's3',
 };
 
 // Get prefix values to construct the expected Redis schema keys
@@ -27,11 +28,21 @@ function getPrefixValues(timestamp) {
             type = 'buckets';
         } else if (metric === 'accountId') {
             type = 'accounts';
+        } else if (metric === 'service') {
+            type = 'services';
         }
-        arr.push({
-            key: `s3:${type}:${name}`,
-            timestampKey: `s3:${type}:${timestamp}:${name}`,
-        });
+        if (type !== 'service') {
+            const service = metricTypes.service;
+            arr.push({
+                key: `${service}:${type}:${name}`,
+                timestampKey: `${service}:${type}:${timestamp}:${name}`,
+            });
+        } else {
+            arr.push({
+                key: `${name}`,
+                timestampKey: `${name}:${timestamp}`,
+            });
+        }
     });
     return arr;
 }

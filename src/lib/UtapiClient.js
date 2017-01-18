@@ -36,6 +36,7 @@ const methods = {
 const metricObj = {
     buckets: 'bucket',
     accounts: 'accountId',
+    services: 'service',
 };
 
 export default class UtapiClient {
@@ -131,7 +132,7 @@ export default class UtapiClient {
         // Object of metric types and their associated property names
         if (this.metrics) {
             this.metrics.forEach(level => {
-                const propName = metricObj[level];
+                    const propName = metricObj[level];
                 assert(typeof params[propName] === 'string' ||
                     params[propName] === undefined,
                     `${propName} must be a string`);
@@ -185,6 +186,11 @@ export default class UtapiClient {
         return props.map(type => {
             const typeObj = {};
             typeObj[type] = params[type];
+            // We need to add a `service` property to any non-service level
+            // `typeObj` to be able to build the appropriate schema key.
+            if (type !== 'service') {
+                typeObj.service = params.service;
+            }
             // Include properties that are not metric types
             // (e.g., 'oldByteLength', 'newByteLength', etc.)
             Object.keys(params).forEach(k => {

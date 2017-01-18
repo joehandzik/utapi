@@ -8,14 +8,19 @@ import metricResponseJSON from '../../models/metricResponse';
 const logger = new Logger('UtapiTest');
 const memBackend = new MemoryBackend();
 const datastore = new Datastore();
+
+// TODO: restore all names and levels
 const resourceNames = {
     bucket: 'foo-bucket',
     accountId: 'foo-account',
+    service: 's3',
 };
 const metricLevels = {
     bucket: 'buckets',
     accountId: 'accounts',
+    service: 'services',
 };
+
 datastore.setClient(memBackend);
 
 // Create the metric response object for a given metric.
@@ -26,6 +31,7 @@ function getMetricResponse(schemaKey) {
     const responseKeys = {
         bucket: 'bucketName',
         accountId: 'accountId',
+        service: 'serviceName',
     };
     response[responseKeys[schemaKey]] = resourceNames[schemaKey];
     return response;
@@ -56,6 +62,8 @@ function assertMetrics(schemaKey, metricName, props, done) {
 function getSchemaObject(schemaKey) {
     const schemaObject = {};
     schemaObject[schemaKey] = resourceNames[schemaKey];
+    // TODO: Make this dynamic
+    schemaObject.service = 's3';
     return schemaObject;
 }
 

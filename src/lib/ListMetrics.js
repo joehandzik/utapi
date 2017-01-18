@@ -22,14 +22,21 @@ export default class ListMetrics {
      * @return {object} obj - Object with a key-value pair for a schema method
      */
     _getSchemaObject(resource) {
+        // TODO: UPDATE THIS METHOD
+        const obj = {};
         let type;
         if (this.metric === 'buckets') {
             type = 'bucket';
+            obj[type] = resource;
+            obj.service = 's3';
         } else if (this.metric === 'accounts') {
             type = 'accountId';
+            obj[type] = resource;
+            obj.service = 's3';
+        } else if (this.metric === 'services') {
+            type = 'service';
+            obj[type] = resource;
         }
-        const obj = {};
-        obj[type] = resource;
         return obj;
     }
 
@@ -42,6 +49,7 @@ export default class ListMetrics {
         const metricResponseKeys = {
             buckets: 'bucketName',
             accounts: 'accountId',
+            services: 'serviceName',
         };
         metricResponse[metricResponseKeys[this.metric]] = resource;
         return metricResponse;
@@ -127,6 +135,9 @@ export default class ListMetrics {
         const start = range[0];
         const end = range[1] || Date.now();
         const obj = this._getSchemaObject(resource);
+        // const obj = Object.assign(this._getSchemaObject(resource), {
+        //     service: 's3',
+        // });
 
         // find nearest neighbors for absolutes
         const storageUtilizedKey = generateStateKey(obj, 'storageUtilized');
