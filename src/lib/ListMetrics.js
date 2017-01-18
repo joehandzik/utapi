@@ -22,20 +22,16 @@ export default class ListMetrics {
      * @return {object} obj - Object with a key-value pair for a schema method
      */
     _getSchemaObject(resource) {
-        // TODO: UPDATE THIS METHOD
         const obj = {};
-        let type;
-        if (this.metric === 'buckets') {
-            type = 'bucket';
-            obj[type] = resource;
+        const schemaKeys = {
+            buckets: 'bucket',
+            accounts: 'accountId',
+            services: 'service',
+        };
+        obj[schemaKeys[this.metric]] = resource;
+        // Add service level to generate keys for any non-service level metrics
+        if (this.metric !== 'services') {
             obj.service = 's3';
-        } else if (this.metric === 'accounts') {
-            type = 'accountId';
-            obj[type] = resource;
-            obj.service = 's3';
-        } else if (this.metric === 'services') {
-            type = 'service';
-            obj[type] = resource;
         }
         return obj;
     }

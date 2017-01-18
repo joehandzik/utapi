@@ -132,7 +132,7 @@ export default class UtapiClient {
         // Object of metric types and their associated property names
         if (this.metrics) {
             this.metrics.forEach(level => {
-                    const propName = metricObj[level];
+                const propName = metricObj[level];
                 assert(typeof params[propName] === 'string' ||
                     params[propName] === undefined,
                     `${propName} must be a string`);

@@ -9,7 +9,6 @@ const logger = new Logger('UtapiTest');
 const memBackend = new MemoryBackend();
 const datastore = new Datastore();
 
-// TODO: restore all names and levels
 const resourceNames = {
     bucket: 'foo-bucket',
     accountId: 'foo-account',
@@ -62,8 +61,10 @@ function assertMetrics(schemaKey, metricName, props, done) {
 function getSchemaObject(schemaKey) {
     const schemaObject = {};
     schemaObject[schemaKey] = resourceNames[schemaKey];
-    // TODO: Make this dynamic
-    schemaObject.service = 's3';
+    // Add the service level to generate keys for any non-service level metrics
+    if (schemaKey !== 'service') {
+        schemaObject.service = resourceNames.service;
+    }
     return schemaObject;
 }
 

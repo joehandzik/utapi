@@ -45,6 +45,7 @@ const keys = {
 * @return {string} - prefix for the schema key
 */
 function getSchemaPrefix(params, timestamp) {
+    const keys = ['bucket', 'accountId', 'service'];
     // Map of possible metric types and their associated prefix level keys
     const map = {
         bucket: 'buckets',
@@ -55,7 +56,7 @@ function getSchemaPrefix(params, timestamp) {
     // remain last in `map`.
     //
     // TODO: REMOVE DEPENDENCY ON OBJECT ORDER USING ['buckets', 'accounts']
-    const metricType = Object.keys(params).find(k => k in map);
+    const metricType = Object.keys(params).find(k => keys.indexOf(k) >= 0);
     const level = map[metricType];
     const id = params[metricType];
     // Use the service property from `params` to consruct the schema.
@@ -119,9 +120,9 @@ export function getMetricFromKey(key, value, metricType) {
         // s3:accounts:1473451689898:demo:putObject
         return key.slice(26).replace(`${value}:`, '');
     } else if (metricType === 'services') {
-        // s3:services:1484776800000:s3:outgoingBytes
+        // s3:service:1484776800000:s3:outgoingBytes
         return key.slice(26).replace(`${value}:`, '');
-      }
+    }
     return undefined;
 }
 
