@@ -62,9 +62,7 @@ function getSchemaObject(schemaKey) {
     const schemaObject = {};
     schemaObject[schemaKey] = resourceNames[schemaKey];
     // Add the service level to generate keys for any non-service level metrics
-    if (schemaKey !== 'service') {
-        schemaObject.service = resourceNames.service;
-    }
+    schemaObject.service = resourceNames.service;
     return schemaObject;
 }
 

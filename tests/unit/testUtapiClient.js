@@ -12,30 +12,24 @@ const REQUID = 'aaaaaaaaaaaaaaaaaaa';
 const metricTypes = {
     bucket: 'foo-bucket',
     accountId: 'foo-account',
-    service: 's3',
 };
 
-// Get prefix values to construct the expected Redis schema keys
+// Build prefix values to construct the expected Redis schema keys
 function getPrefixValues(timestamp) {
-    const arr = [];
-    Object.keys(metricTypes).forEach(metric => {
-        if (metricTypes[metric] === undefined) {
-            return;
-        }
-        const name = metricTypes[metric];
-        const schemaKeys = {
-            bucket: 'buckets',
-            accountId: 'accounts',
-            service: 'services',
-        };
-        const type = schemaKeys[metric];
-        const service = metricTypes.service;
-        arr.push({
-            key: `${service}:${type}:${name}`,
-            timestampKey: `${service}:${type}:${timestamp}:${name}`,
-        });
-    });
-    return arr;
+    return [
+        {
+            key: 's3:buckets:foo-bucket',
+            timestampKey: `s3:buckets:${timestamp}:foo-bucket`,
+        },
+        {
+            key: 's3:accounts:foo-account',
+            timestampKey: `s3:accounts:${timestamp}:foo-account`,
+        },
+        {
+            key: 's3:services:s3',
+            timestampKey: `s3:services:${timestamp}:s3`,
+        },
+    ];
 }
 
 // Set mock data of a particular storageUtilized and numberOfObjects
@@ -78,7 +72,11 @@ function getObject(timestamp, data) {
 }
 
 function testMetric(metric, params, expected, cb) {
-    const c = new UtapiClient();
+    // Configuration of UtapiClient determines the service level metrics
+    const c = new UtapiClient({
+        metrics: ['buckets', 'accounts', 'services'],
+        component: 's3',
+    });
     c.setDataStore(ds);
     c.pushMetric(metric, REQUID, params, () => {
         assert.deepStrictEqual(memoryBackend.data, expected);
@@ -88,7 +86,7 @@ function testMetric(metric, params, expected, cb) {
 
 describe('UtapiClient:: enable/disable client', () => {
     it('should disable client when no redis config is provided', () => {
-        const c = new UtapiClient();
+        const c = new UtapiClient({ component: 's3' });
         assert.strictEqual(c instanceof UtapiClient, true);
         assert.strictEqual(c.disableClient, true);
         assert.strictEqual(c.log instanceof Logger, true);
@@ -96,7 +94,12 @@ describe('UtapiClient:: enable/disable client', () => {
     });
 
     it('should enable client when redis config is provided', () => {
-        const c = new UtapiClient({ redis: { host: 'localhost', port: 6379 } });
+        const c = new UtapiClient({
+            redis: {
+                host: 'localhost',
+                port: 6379 },
+            component: 's3',
+        });
         assert.strictEqual(c instanceof UtapiClient, true);
         assert.strictEqual(c.disableClient, false);
         assert.strictEqual(c.log instanceof Logger, true);

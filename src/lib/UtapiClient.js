@@ -61,6 +61,11 @@ export default class UtapiClient {
         if (config && config.metrics) {
             this.metrics = config.metrics;
         }
+        if (config) {
+            assert(config.component, 'Must include `component` property in ' +
+                'the configuration of Utapi');
+            this.component = config.component;
+        }
     }
 
     /**
@@ -174,7 +179,7 @@ export default class UtapiClient {
         // Only push metric levels defined in the config, otherwise push any
         // levels that are passed in the object
         const levels = this.metrics ? this.metrics : Object.keys(metricObj);
-        const props = [];
+        const props = ['service'];
         for (let i = 0; i < levels.length; i++) {
             const prop = metricObj[levels[i]];
             if (params[prop] !== undefined) {
@@ -183,14 +188,13 @@ export default class UtapiClient {
         }
         const metricProps = ['byteLength', 'newByteLength', 'oldByteLength',
             'numberOfObjects'];
+        // If the config specifies service level metrics, include them.
         return props.map(type => {
             const typeObj = {};
             typeObj[type] = params[type];
             // We need to add a `service` property to any non-service level
             // `typeObj` to be able to build the appropriate schema key.
-            if (type !== 'service') {
-                typeObj.service = params.service;
-            }
+            typeObj.service = this.component;
             // Include properties that are not metric types
             // (e.g., 'oldByteLength', 'newByteLength', etc.)
             Object.keys(params).forEach(k => {
