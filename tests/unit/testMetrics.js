@@ -41,7 +41,8 @@ function assertMetrics(schemaKey, metricName, props, done) {
     const timeRange = [timestamp, timestamp];
     const expectedRes = getMetricResponse(schemaKey);
     const expectedResProps = props || {};
-    const metricType = new ListMetrics(metricLevels[schemaKey]);
+    const metricType = new ListMetrics(metricLevels[schemaKey],
+        resourceNames.service);
     metricType.getMetrics(metricName, timeRange, datastore, logger,
         (err, res) => {
             assert.strictEqual(err, null);
@@ -116,7 +117,7 @@ Object.keys(metricLevels).forEach(schemaKey => {
         it(`should return ${metric} level metrics for outgoing bytes`, done =>
             testOps(schemaKey, 'outgoingBytes', 'outgoingBytes', done));
 
-        it(`should return ${metric} level metrics for delete bucket`, done =>
+        it.only(`should return ${metric} level metrics for delete bucket`, done =>
             testOps(schemaKey, 'deleteBucket', 's3:DeleteBucket', done));
 
         it(`should return ${metric} level metrics for list bucket`, done =>

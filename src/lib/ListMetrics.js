@@ -11,9 +11,11 @@ export default class ListMetrics {
     /**
      * Assign the metric property to an instance of this class
      * @param {string} metric - The metric type (e.g., 'buckets', 'accounts')
+     * @param {string} component - The service component (e.g., 's3')
      */
-    constructor(metric) {
+    constructor(metric, component) {
         this.metric = metric;
+        this.component = component;
     }
 
     /**
@@ -29,10 +31,8 @@ export default class ListMetrics {
             service: 'service',
         };
         obj[schemaKeys[this.metric]] = resource;
-        // Add service level to generate keys for any non-service level metrics
-        if (this.metric !== 'service') {
-            obj.service = 's3';
-        }
+        // Include service to generate key for any non-service level metric
+        obj.service = this.component;
         return obj;
     }
 
@@ -131,10 +131,6 @@ export default class ListMetrics {
         const start = range[0];
         const end = range[1] || Date.now();
         const obj = this._getSchemaObject(resource);
-        // const obj = Object.assign(this._getSchemaObject(resource), {
-        //     service: 's3',
-        // });
-
         // find nearest neighbors for absolutes
         const storageUtilizedKey = generateStateKey(obj, 'storageUtilized');
         const numberOfObjectsKey = generateStateKey(obj, 'numberOfObjects');
@@ -149,6 +145,7 @@ export default class ListMetrics {
         const timestampRange = this._getTimestampRange(start, end);
         const metricKeys = [].concat.apply([], timestampRange.map(
             i => getKeys(obj, i)));
+        console.log(metricKeys);
         const cmds = metricKeys.map(item => ['get', item]);
         cmds.push(storageUtilizedStart, storageUtilizedEnd,
             numberOfObjectsStart, numberOfObjectsEnd);
