@@ -45,8 +45,8 @@ export default class UtapiClient {
         this.log = null;
         this.ds = null;
         if (config) {
-            assert(config.component, 'Must include `component` property (for ' +
-                'example, \'s3\') in the configuration of Utapi');
+            assert(config.component, 'Must include `component` property in ' +
+                'the configuration of Utapi. Example: `component: \'s3\'`.');
             this.component = config.component;
         }
         // setup logger
@@ -64,6 +64,16 @@ export default class UtapiClient {
             this.disableClient = false;
         }
         if (config && config.metrics) {
+            assert(Array.isArray(config.metrics), '`metrics` property of ' +
+                'Utapi configuration must be an array.');
+            assert(config.metrics.length > 0, '`metrics` property of ' +
+                'Utapi configuration must contain a metric.');
+            const validMetrics = ['buckets', 'accounts', 'service'];
+            config.metrics.forEach(metric =>
+                assert(validMetrics.indexOf(metric) >= 0, '`metrics` ' +
+                    'property of Utapi configuration contains invalid ' +
+                    `metric: '${metric}'. Valid metrics: ` +
+                    `[\'${validMetrics.join('\', \'')}\'].`));
             this.metrics = config.metrics;
         }
     }
@@ -176,7 +186,8 @@ export default class UtapiClient {
      */
     _getParamsArr(params) {
         this._checkMetricTypes(params);
-        // Add service information to the `params` object
+        // Add service information to the `params` object since this property is
+        // not included in the object passed to pushMetric
         const serviceParams = Object.assign(params, {
             service: this.component,
         });
