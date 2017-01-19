@@ -78,7 +78,6 @@ export default class ListMetrics {
             service: 'serviceName',
         };
         metricResponse[metricResponseKeys[this.metric]] = resource;
-        console.log('metricResponse:');
         return metricResponse;
     }
 
@@ -176,13 +175,10 @@ export default class ListMetrics {
         const timestampRange = this._getTimestampRange(start, end);
         const metricKeys = [].concat.apply([], timestampRange.map(
             i => getKeys(obj, i)));
-        console.log('metricKeys results');
         const cmds = metricKeys.map(item => ['get', item]);
         cmds.push(storageUtilizedStart, storageUtilizedEnd,
             numberOfObjectsStart, numberOfObjectsEnd);
 
-        console.log('cmds:');
-        console.log(cmds);
         datastore.batch(cmds, (err, res) => {
             if (err) {
                 log.trace('error occurred while getting metrics', {
@@ -195,8 +191,6 @@ export default class ListMetrics {
             const metricResponse = this._getMetricResponse(resource, start,
                 end);
             // last 4 are results of storageUtilized, numberOfObjects,
-            console.log('res:');
-            console.log(res);
             const absolutes = res.slice(-4);
             const deltas = res.slice(0, res.length - 4);
             absolutes.forEach((item, index) => {
@@ -238,7 +232,8 @@ export default class ListMetrics {
                         cmd: key,
                     });
                 } else {
-                    const m = getMetricFromKey(key, resource, this.metric);
+                    const m = getMetricFromKey(key, resource, this.component,
+                        this.metric);
                     let count = parseInt(item[1], 10);
                     count = Number.isNaN(count) ? 0 : count;
                     if (m === 'incomingBytes' || m === 'outgoingBytes') {

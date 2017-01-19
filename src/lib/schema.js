@@ -102,7 +102,6 @@ export function getCounters(params) {
 */
 export function getKeys(params, timestamp) {
     const prefix = getSchemaPrefix(params, timestamp);
-    console.log('getSchemaPrefix result');
     return Object.keys(keys).map(item => keys[item](prefix));
 }
 
@@ -110,19 +109,22 @@ export function getKeys(params, timestamp) {
 * Returns metric from key
 * @param {string} key - schema key
 * @param {string} value - the metric value
+* @param {string} component - the service component (e.g., 's3')
 * @param {string} metricType - the metric type
 * @return {string|undefined} metric - S3 metric or `undefined`
 */
-export function getMetricFromKey(key, value, metricType) {
+export function getMetricFromKey(key, value, component, metricType) {
+    // We get the length of the component to dynamically slice the string
+    const len = component.length;
     if (metricType === 'buckets') {
         // s3:buckets:1473451689898:demo:putObject
-        return key.slice(25).replace(`${value}:`, '');
+        return key.slice(23 + len).replace(`${value}:`, '');
     } else if (metricType === 'accounts') {
         // s3:accounts:1473451689898:demo:putObject
-        return key.slice(26).replace(`${value}:`, '');
+        return key.slice(24 + len).replace(`${value}:`, '');
     } else if (metricType === 'service') {
         // s3:service:1484776800000:s3:outgoingBytes
-        return key.slice(25).replace(`${value}:`, '');
+        return key.slice(23 + len).replace(`${value}:`, '');
     }
     return undefined;
 }
