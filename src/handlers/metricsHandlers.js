@@ -12,12 +12,12 @@ export class BucketsHandler {
     * @param {callback} cb - callback
     * @return {undefined}
     */
-    static listMetrics(utapiRequest, cb) {
+    static listMetrics(utapiRequest, component, cb) {
         const log = utapiRequest.getLog();
         log.debug('handling list metrics request', {
             method: 'BucketsHandler.listMetrics',
         });
-        const Buckets = new ListMetrics('buckets');
+        const Buckets = new ListMetrics('buckets', component);
         return Buckets.getTypesMetrics(utapiRequest, cb);
     }
 }
@@ -34,12 +34,12 @@ export class AccountsHandler {
     * @param {callback} cb - callback
     * @return {undefined}
     */
-    static listMetrics(utapiRequest, cb) {
+    static listMetrics(utapiRequest, component, cb) {
         const log = utapiRequest.getLog();
         log.debug('handling list metrics request', {
             method: 'AccountsHandler.listMetrics',
         });
-        const Accounts = new ListMetrics('accounts');
+        const Accounts = new ListMetrics('accounts', component);
         return Accounts.getTypesMetrics(utapiRequest, cb);
     }
 }
