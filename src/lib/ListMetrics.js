@@ -40,7 +40,37 @@ export default class ListMetrics {
     _getMetricResponse(resource, start, end) {
         // Use `JSON.parse` to make deep clone because `Object.assign` will
         // copy property values.
-        const metricResponse = JSON.parse(JSON.stringify(metricResponseJSON));
+        const metricResponse = {
+            timeRange: [],
+            storageUtilized: [0, 0],
+            incomingBytes: 0,
+            outgoingBytes: 0,
+            numberOfObjects: [0, 0],
+            operations: {},
+        };
+        metricResponse.operations[`${this.component}:DeleteBucket`] = 0;
+        metricResponse.operations[`${this.component}:DeleteBucketWebsite`] = 0;
+        metricResponse.operations[`${this.component}:ListBucket`] = 0;
+        metricResponse.operations[`${this.component}:GetBucketAcl`] = 0;
+        metricResponse.operations[`${this.component}:GetBucketWebsite`] = 0;
+        metricResponse.operations[`${this.component}:CreateBucket`] = 0;
+        metricResponse.operations[`${this.component}:PutBucketAcl`] = 0;
+        metricResponse.operations[`${this.component}:PutBucketWebsite`] = 0;
+        metricResponse.operations[`${this.component}:PutObject`] = 0;
+        metricResponse.operations[`${this.component}:CopyObject`] = 0;
+        metricResponse.operations[`${this.component}:UploadPart`] = 0;
+        metricResponse.operations[`${this.component}:ListBucketMultipartUploads`] = 0;
+        metricResponse.operations[`${this.component}:ListMultipartUploadParts`] = 0;
+        metricResponse.operations[`${this.component}:InitiateMultipartUpload`] = 0;
+        metricResponse.operations[`${this.component}:CompleteMultipartUpload`] = 0;
+        metricResponse.operations[`${this.component}:AbortMultipartUpload`] = 0;
+        metricResponse.operations[`${this.component}:DeleteObject`] = 0;
+        metricResponse.operations[`${this.component}:MultiObjectDelete`] = 0;
+        metricResponse.operations[`${this.component}:GetObject`] = 0;
+        metricResponse.operations[`${this.component}:GetObjectAcl`] = 0;
+        metricResponse.operations[`${this.component}:PutObjectAcl`] = 0;
+        metricResponse.operations[`${this.component}:HeadBucket`] = 0;
+        metricResponse.operations[`${this.component}:HeadObject`] = 0;
         metricResponse.timeRange = [start, end];
         const metricResponseKeys = {
             buckets: 'bucketName',
@@ -48,6 +78,7 @@ export default class ListMetrics {
             service: 'serviceName',
         };
         metricResponse[metricResponseKeys[this.metric]] = resource;
+        console.log('metricResponse:');
         return metricResponse;
     }
 
@@ -145,11 +176,13 @@ export default class ListMetrics {
         const timestampRange = this._getTimestampRange(start, end);
         const metricKeys = [].concat.apply([], timestampRange.map(
             i => getKeys(obj, i)));
-        console.log(metricKeys);
+        console.log('metricKeys results');
         const cmds = metricKeys.map(item => ['get', item]);
         cmds.push(storageUtilizedStart, storageUtilizedEnd,
             numberOfObjectsStart, numberOfObjectsEnd);
 
+        console.log('cmds:');
+        console.log(cmds);
         datastore.batch(cmds, (err, res) => {
             if (err) {
                 log.trace('error occurred while getting metrics', {
@@ -162,6 +195,8 @@ export default class ListMetrics {
             const metricResponse = this._getMetricResponse(resource, start,
                 end);
             // last 4 are results of storageUtilized, numberOfObjects,
+            console.log('res:');
+            console.log(res);
             const absolutes = res.slice(-4);
             const deltas = res.slice(0, res.length - 4);
             absolutes.forEach((item, index) => {

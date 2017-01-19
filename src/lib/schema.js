@@ -102,6 +102,7 @@ export function getCounters(params) {
 */
 export function getKeys(params, timestamp) {
     const prefix = getSchemaPrefix(params, timestamp);
+    console.log('getSchemaPrefix result');
     return Object.keys(keys).map(item => keys[item](prefix));
 }
 
