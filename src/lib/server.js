@@ -185,6 +185,8 @@ export default function spawn(params) {
     const cluster = new Clustering(workers, logger);
     cluster.start(worker => {
         const datastore = new Datastore().setClient(redisClient(redis, logger));
+        console.log('HELLO');
+        console.log(config);
         const server = new UtapiServer(worker, port, datastore, logger, config);
         server.startup();
     });
