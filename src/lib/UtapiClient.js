@@ -156,7 +156,7 @@ export default class UtapiClient {
             method: `UtapiClient.${method}`,
             timestamp,
         };
-        const metricTypes = ['bucket', 'accountId'];
+        const metricTypes = ['bucket', 'accountId', 'service'];
         const metricType = metricTypes.find(type => type in params);
         logObject[metricType] = params[metricType];
         log.trace('pushing metric', logObject);
