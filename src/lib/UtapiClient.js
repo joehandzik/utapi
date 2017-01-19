@@ -36,7 +36,7 @@ const methods = {
 const metricObj = {
     buckets: 'bucket',
     accounts: 'accountId',
-    services: 'service',
+    service: 'service',
 };
 
 export default class UtapiClient {
@@ -44,6 +44,11 @@ export default class UtapiClient {
         this.disableClient = true;
         this.log = null;
         this.ds = null;
+        if (config) {
+            assert(config.component, 'Must include `component` property (for ' +
+                'example, \'s3\') in the configuration of Utapi');
+            this.component = config.component;
+        }
         // setup logger
         if (config && config.log) {
             this.log = new Logger('UtapiClient', { level: config.log.level,
@@ -60,11 +65,6 @@ export default class UtapiClient {
         }
         if (config && config.metrics) {
             this.metrics = config.metrics;
-        }
-        if (config) {
-            assert(config.component, 'Must include `component` property in ' +
-                'the configuration of Utapi');
-            this.component = config.component;
         }
     }
 
@@ -178,6 +178,7 @@ export default class UtapiClient {
         this._checkMetricTypes(params);
         // Only push metric levels defined in the config, otherwise push any
         // levels that are passed in the object
+        // TODO: Do we need Object.Keys here? Conflict with other PR?
         const levels = this.metrics ? this.metrics : Object.keys(metricObj);
         const props = ['service'];
         for (let i = 0; i < levels.length; i++) {

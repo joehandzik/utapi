@@ -17,7 +17,7 @@ const resourceNames = {
 const metricLevels = {
     bucket: 'buckets',
     accountId: 'accounts',
-    service: 'services',
+    service: 'service',
 };
 
 datastore.setClient(memBackend);

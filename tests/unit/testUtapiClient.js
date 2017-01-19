@@ -26,8 +26,8 @@ function getPrefixValues(timestamp) {
             timestampKey: `s3:accounts:${timestamp}:foo-account`,
         },
         {
-            key: 's3:services:s3',
-            timestampKey: `s3:services:${timestamp}:s3`,
+            key: 's3:service:s3',
+            timestampKey: `s3:service:${timestamp}:s3`,
         },
     ];
 }
@@ -74,7 +74,7 @@ function getObject(timestamp, data) {
 function testMetric(metric, params, expected, cb) {
     // Configuration of UtapiClient determines the service level metrics
     const c = new UtapiClient({
-        metrics: ['buckets', 'accounts', 'services'],
+        metrics: ['buckets', 'accounts', 'service'],
         component: 's3',
     });
     c.setDataStore(ds);

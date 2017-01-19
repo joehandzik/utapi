@@ -26,11 +26,11 @@ export default class ListMetrics {
         const schemaKeys = {
             buckets: 'bucket',
             accounts: 'accountId',
-            services: 'service',
+            service: 'service',
         };
         obj[schemaKeys[this.metric]] = resource;
         // Add service level to generate keys for any non-service level metrics
-        if (this.metric !== 'services') {
+        if (this.metric !== 'service') {
             obj.service = 's3';
         }
         return obj;
@@ -45,7 +45,7 @@ export default class ListMetrics {
         const metricResponseKeys = {
             buckets: 'bucketName',
             accounts: 'accountId',
-            services: 'serviceName',
+            service: 'serviceName',
         };
         metricResponse[metricResponseKeys[this.metric]] = resource;
         return metricResponse;

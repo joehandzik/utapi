@@ -50,7 +50,7 @@ function getSchemaPrefix(params, timestamp) {
     const map = {
         bucket: 'buckets',
         accountId: 'accounts',
-        service: 'services',
+        service: 'service',
     };
     // Return the first property in `params`, thus the service property needs to
     // remain last in `map`.
@@ -119,9 +119,9 @@ export function getMetricFromKey(key, value, metricType) {
     } else if (metricType === 'accounts') {
         // s3:accounts:1473451689898:demo:putObject
         return key.slice(26).replace(`${value}:`, '');
-    } else if (metricType === 'services') {
+    } else if (metricType === 'service') {
         // s3:service:1484776800000:s3:outgoingBytes
-        return key.slice(26).replace(`${value}:`, '');
+        return key.slice(25).replace(`${value}:`, '');
     }
     return undefined;
 }
