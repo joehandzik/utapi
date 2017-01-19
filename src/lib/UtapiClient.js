@@ -176,34 +176,36 @@ export default class UtapiClient {
      */
     _getParamsArr(params) {
         this._checkMetricTypes(params);
+        // Add service information to the `params` object
+        const serviceParams = Object.assign(params, {
+            service: this.component,
+        });
         // Only push metric levels defined in the config, otherwise push any
         // levels that are passed in the object
-        // TODO: Do we need Object.Keys here? Conflict with other PR?
         const levels = this.metrics ? this.metrics : Object.keys(metricObj);
-        const props = ['service'];
+        const props = [];
         for (let i = 0; i < levels.length; i++) {
             const prop = metricObj[levels[i]];
-            if (params[prop] !== undefined) {
+            if (serviceParams[prop] !== undefined) {
                 props.push(metricObj[levels[i]]);
             }
         }
         const metricProps = ['byteLength', 'newByteLength', 'oldByteLength',
             'numberOfObjects'];
-        // If the config specifies service level metrics, include them.
         return props.map(type => {
             const typeObj = {};
-            typeObj[type] = params[type];
+            typeObj[type] = serviceParams[type];
             // We need to add a `service` property to any non-service level
             // `typeObj` to be able to build the appropriate schema key.
             typeObj.service = this.component;
             // Include properties that are not metric types
             // (e.g., 'oldByteLength', 'newByteLength', etc.)
-            Object.keys(params).forEach(k => {
+            Object.keys(serviceParams).forEach(k => {
                 // Get other properties, but do not include `undefined` ones
                 // or any unrelated properties (those not in `metricProps`).
-                if (props.indexOf(k) < 0 && params[k] !== undefined &&
+                if (props.indexOf(k) < 0 && serviceParams[k] !== undefined &&
                 metricProps.indexOf(k) >= 0) {
-                    typeObj[k] = params[k];
+                    typeObj[k] = serviceParams[k];
                 }
             });
             return typeObj;
