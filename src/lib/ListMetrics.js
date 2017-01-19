@@ -244,7 +244,8 @@ export default class ListMetrics {
                     if (m === 'incomingBytes' || m === 'outgoingBytes') {
                         metricResponse[m] += count;
                     } else {
-                        metricResponse.operations[`s3:${m}`] += count;
+                        metricResponse.operations[`${this.component}:${m}`] +=
+                            count;
                     }
                 }
             });
