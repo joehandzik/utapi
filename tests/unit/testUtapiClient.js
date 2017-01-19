@@ -23,26 +23,17 @@ function getPrefixValues(timestamp) {
             return;
         }
         const name = metricTypes[metric];
-        let type;
-        if (metric === 'bucket') {
-            type = 'buckets';
-        } else if (metric === 'accountId') {
-            type = 'accounts';
-        } else if (metric === 'service') {
-            type = 'services';
-        }
-        if (type !== 'service') {
-            const service = metricTypes.service;
-            arr.push({
-                key: `${service}:${type}:${name}`,
-                timestampKey: `${service}:${type}:${timestamp}:${name}`,
-            });
-        } else {
-            arr.push({
-                key: `${name}`,
-                timestampKey: `${name}:${timestamp}`,
-            });
-        }
+        const schemaKeys = {
+            bucket: 'buckets',
+            accountId: 'accounts',
+            service: 'services',
+        };
+        const type = schemaKeys[metric];
+        const service = metricTypes.service;
+        arr.push({
+            key: `${service}:${type}:${name}`,
+            timestampKey: `${service}:${type}:${timestamp}:${name}`,
+        });
     });
     return arr;
 }
