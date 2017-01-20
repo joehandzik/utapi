@@ -45,30 +45,19 @@ const keys = {
 * @return {string} - prefix for the schema key
 */
 function getSchemaPrefix(params, timestamp) {
-    const keys = ['bucket', 'accountId', 'service'];
-    // Map of possible metric types and their associated prefix level keys
-    const map = {
-        bucket: 'buckets',
-        accountId: 'accounts',
-        service: 'service',
-    };
-    // Return the first property in `params`, thus the service property needs to
-    // remain last in `map`.
-    //
-    // TODO: REMOVE DEPENDENCY ON OBJECT ORDER USING ['buckets', 'accounts']
-    const metricType = Object.keys(params).find(k => keys.indexOf(k) >= 0);
-    const level = map[metricType];
-    const id = params[metricType];
-    // Use the service property from `params` to consruct the schema.
-    if (metricType !== 'service') {
-        const service = params.service;
-        const prefix = timestamp === undefined ? `${service}:${level}:${id}:` :
-            `${service}:${level}:${timestamp}:${id}:`;
-        return prefix;
+    const { bucket, accountId, service } = params;
+    let level;
+    if (bucket) {
+        level = 'buckets';
+    } else if (accountId) {
+        level = 'accounts';
+    } else if (service) {
+        level = 'service';
     }
-    // TODO: Update service level key
-    const prefix = timestamp === undefined ? `${id}:${level}:${id}:` :
-        `${id}:${level}:${timestamp}:${id}:`;
+    // `service` property needs to remain last, as other objects also include it
+    const id = bucket || accountId || service;
+    const prefix = timestamp ? `${service}:${level}:${timestamp}:${id}:` :
+        `${service}:${level}:${id}:`;
     return prefix;
 }
 

@@ -123,7 +123,7 @@ Object.keys(metricLevels).forEach(schemaKey => {
         it(`should return ${metric} level metrics for outgoing bytes`, done =>
             testOps(schemaKey, 'outgoingBytes', 'outgoingBytes', done));
 
-        it.only(`should return ${metric} level metrics for delete bucket`, done =>
+        it(`should return ${metric} level metrics for delete bucket`, done =>
             testOps(schemaKey, 'deleteBucket', 's3:DeleteBucket', done));
 
         it(`should return ${metric} level metrics for list bucket`, done =>
