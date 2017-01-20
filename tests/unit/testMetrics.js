@@ -27,6 +27,12 @@ function getMetricResponse(schemaKey) {
     // Use `JSON.parse` to make deep clone because `Object.assign` will
     // copy property values.
     const response = JSON.parse(JSON.stringify(metricResponseJSON));
+    // Push the service name onto the operation
+    Object.keys(response.operations).forEach(operation => {
+        response.operations[`${resourceNames.service}:${operation}`] =
+            response.operations[operation];
+        delete response.operations[operation];
+    });
     const responseKeys = {
         bucket: 'bucketName',
         accountId: 'accountId',
@@ -117,7 +123,7 @@ Object.keys(metricLevels).forEach(schemaKey => {
         it(`should return ${metric} level metrics for outgoing bytes`, done =>
             testOps(schemaKey, 'outgoingBytes', 'outgoingBytes', done));
 
-        it(`should return ${metric} level metrics for delete bucket`, done =>
+        it.only(`should return ${metric} level metrics for delete bucket`, done =>
             testOps(schemaKey, 'deleteBucket', 's3:DeleteBucket', done));
 
         it(`should return ${metric} level metrics for list bucket`, done =>
