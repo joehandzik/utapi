@@ -165,11 +165,11 @@ export default class ListMetrics {
         const storageUtilizedKey = generateStateKey(obj, 'storageUtilized');
         const numberOfObjectsKey = generateStateKey(obj, 'numberOfObjects');
         const storageUtilizedStart = ['zrevrangebyscore', storageUtilizedKey,
-            start, '-inf', 'LIMIT', '0', '1'];
+            '-inf', start, 'LIMIT', '0', '1'];
         const storageUtilizedEnd = ['zrevrangebyscore', storageUtilizedKey, end,
             '-inf', 'LIMIT', '0', '1'];
         const numberOfObjectsStart = ['zrevrangebyscore', numberOfObjectsKey,
-            start, '-inf', 'LIMIT', '0', '1'];
+            '-inf', start, 'LIMIT', '0', '1'];
         const numberOfObjectsEnd = ['zrevrangebyscore', numberOfObjectsKey, end,
             '-inf', 'LIMIT', '0', '1'];
         const timestampRange = this._getTimestampRange(start, end);
